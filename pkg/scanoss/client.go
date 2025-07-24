@@ -28,10 +28,10 @@ import (
 
 // Client provides a unified interface to SCANOSS data models and services.
 type Client struct {
-	ctx    context.Context
-	logger *zap.SugaredLogger
-	conn   *sqlx.Conn
-	q      *database.DBQueryContext
+	ctx  context.Context
+	s    *zap.SugaredLogger
+	conn *sqlx.Conn
+	q    *database.DBQueryContext
 
 	Models    *models.DB
 	Component *services.ComponentService
@@ -40,16 +40,16 @@ type Client struct {
 // New creates a SCANOSS Model Client.
 // NOTE: DB Connection are handled externally, the library do not close neither opens connections
 // TODO: remove conn *sqlx.Conn and rely only on *database.DBQueryContext
-func New(ctx context.Context, logger *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *Client {
+func New(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *Client {
 	// Initialize data access layer
-	models := models.NewDB(ctx, logger, conn, q)
+	models := models.NewDB(ctx, s, conn, q)
 
 	// Initialize business logic layer
-	component := services.NewComponentService(ctx, logger, models)
+	component := services.NewComponentService(ctx, s, models)
 
 	return &Client{
 		ctx:       ctx,
-		logger:    logger,
+		s:         s,
 		conn:      conn,
 		Models:    models,
 		Component: component,
