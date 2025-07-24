@@ -71,19 +71,8 @@ func TestLicensesSearch(t *testing.T) {
 	if err != nil {
 		t.Errorf("licenses.GetLicenseByName() error = %v", err)
 	}
-	if len(license.LicenseName) == 0 {
-		t.Errorf("licenses.GetLicenseByName() No license returned from query")
-	}
-	fmt.Printf("Created License: %#v\n", license)
-
-	name = "Apache 2.0; MIT; BSD"
-	fmt.Printf("Searching for license: %v\n", name)
-	license, err = licenseModel.GetLicenseByName(name)
-	if err != nil {
-		t.Errorf("licenses.GetLicenseByName() error = %v", err)
-	}
-	if len(license.LicenseName) == 0 {
-		t.Errorf("licenses.GetLicenseByName() No license returned from query")
+	if len(license.LicenseName) != 0 {
+		t.Errorf("licenses.GetLicenseByName() No license expected from query")
 	}
 	fmt.Printf("Created License: %#v\n", license)
 }

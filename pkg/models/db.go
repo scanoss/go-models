@@ -32,12 +32,11 @@ type DB struct {
 	conn *sqlx.Conn //TODO: refactor all models and replace with *database.DBQueryContext
 	q    *database.DBQueryContext
 
-	AllUrls        *AllUrlsModel
-	Projects       *ProjectModel
-	Versions       *VersionModel
-	Licenses       *LicenseModel
-	Mines          *MineModel
-	GolangProjects *GolangProjects
+	AllUrls  *AllUrlsModel
+	Projects *ProjectModel
+	Versions *VersionModel
+	Licenses *LicenseModel
+	Mines    *MineModel
 }
 
 // NewDB creates a new instance of the unified SCANOSS models database wrapper.
@@ -56,7 +55,6 @@ func NewDB(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *databa
 	db.Licenses = NewLicenseModel(ctx, s, conn)
 	db.Mines = NewMineModel(ctx, s, conn)
 
-	db.GolangProjects = NewGolangProjectModel(ctx, s, conn, q)
 	db.AllUrls = NewAllURLModel(ctx, s, q)
 
 	return db

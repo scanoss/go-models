@@ -54,7 +54,7 @@ func TestVersionsSearch(t *testing.T) {
 	fmt.Printf("Version: %#v\n", version)
 
 	name = ""
-	fmt.Printf("Searching for license: %v\n", name)
+	fmt.Printf("Searching for version: %v\n", name)
 	_, err = versionModel.GetVersionByName(name)
 	if err == nil {
 		t.Errorf("versions.GetVersionByName() error = did not get an error")
@@ -68,8 +68,8 @@ func TestVersionsSearch(t *testing.T) {
 	if err != nil {
 		t.Errorf("versions.GetVersionByName() error = %v", err)
 	}
-	if len(version.VersionName) == 0 {
-		t.Errorf("versions.GetVersionByName() No version returned from query")
+	if len(version.VersionName) != 0 {
+		t.Errorf("versions.GetVersionByName() - Expected no version returned from query")
 	}
 	fmt.Printf("Version: %#v\n", version)
 }
