@@ -26,20 +26,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// Client provides a unified interface to SCANOSS data models and operations.
+// Client provides a unified interface to SCANOSS data models and services.
 type Client struct {
 	ctx    context.Context
 	logger *zap.SugaredLogger
 	conn   *sqlx.Conn
 	q      *database.DBQueryContext
 
-	// Data access layer
-	Models *models.DB
-
-	// Business logic layer
+	Models    *models.DB
 	Component *services.ComponentService
 }
 
+// New creates a SCANOSS Model Client.
+// NOTE: DB Connection are handled externally, the library do not close neither opens connections
+// TODO: remove conn *sqlx.Conn and rely only on *database.DBQueryContext
 func New(ctx context.Context, logger *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *Client {
 	// Initialize data access layer
 	models := models.NewDB(ctx, logger, conn, q)
@@ -54,13 +54,4 @@ func New(ctx context.Context, logger *zap.SugaredLogger, conn *sqlx.Conn, q *dat
 		Models:    models,
 		Component: component,
 	}
-}
-
-// Close closes the client and releases any resources.
-// This should be called when the client is no longer needed.
-func (c *Client) Close() error {
-	if c.conn != nil {
-		return c.conn.Close()
-	}
-	return nil
 }

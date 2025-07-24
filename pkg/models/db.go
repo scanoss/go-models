@@ -49,22 +49,11 @@ func NewDB(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *databa
 		q:    q,
 	}
 
-	// Initialize core models
 	db.Projects = NewProjectModel(ctx, s, conn)
 	db.Versions = NewVersionModel(ctx, s, conn)
 	db.Licenses = NewLicenseModel(ctx, s, conn)
 	db.Mines = NewMineModel(ctx, s, conn)
-
 	db.AllUrls = NewAllURLModel(ctx, s, q)
 
 	return db
-}
-
-// Close closes the database connection and releases any resources.
-// This should be called when the database is no longer needed.
-func (db *DB) Close() error {
-	if db.conn != nil {
-		return db.conn.Close()
-	}
-	return nil
 }

@@ -21,13 +21,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
-	"sort"
-	"strings"
-
 	"github.com/scanoss/go-models/pkg/models"
 	"github.com/scanoss/go-models/pkg/types"
 	purlutils "github.com/scanoss/go-purl-helper/pkg"
 	"go.uber.org/zap"
+	"sort"
 )
 
 // ComponentService orchestrates component lookup logic using extracted business logic.
@@ -67,12 +65,6 @@ func (cs *ComponentService) GetComponent(req types.ComponentRequest) (types.Comp
 	}
 
 	purlReq := req.Requirement
-
-	// TODO check what to do if we get a "file" requirement
-	if len(purlReq) > 0 && strings.HasPrefix(purlReq, "file:") { // internal dependency requirement. Assume latest
-		cs.s.Debugf("Removing 'local' requirement for purl: %v (req: %v)", req.Purl, purlReq)
-		purlReq = ""
-	}
 
 	// Extract an exact version from requirement if no version in PURL
 	if len(purl.Version) == 0 && len(purlReq) > 0 {

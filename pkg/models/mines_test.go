@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"github.com/scanoss/go-models/internal/testutils"
 	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	_ "modernc.org/sqlite"
 )
@@ -34,11 +35,12 @@ func TestMines(t *testing.T) {
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-	db := sqliteSetup(t) // Setup SQL Lite DB
-	defer CloseDB(db)
-	conn := sqliteConn(t, ctx, db) // Get a connection from the pool
-	defer CloseConn(conn)
-	err = loadSQLData(db, ctx, conn, "./tests/mines.sql")
+	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
+	defer testutils.CloseDB(t, db)
+	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
+	defer testutils.CloseConn(t, conn)
+	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
 	if err != nil {
 		t.Fatalf("failed to load SQL test data: %v", err)
 	}
@@ -89,10 +91,12 @@ func TestMinesBadSql(t *testing.T) {
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-	db := sqliteSetup(t) // Setup SQL Lite DB
-	defer CloseDB(db)
-	conn := sqliteConn(t, ctx, db) // Get a connection from the pool
-	defer CloseConn(conn)
+	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
+	defer testutils.CloseDB(t, db)
+	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
+	defer testutils.CloseConn(t, conn)
+	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
 	mine := NewMineModel(ctx, s, conn)
 	purlType := "NONEXISTENT"
 	mineIds, err := mine.GetMineIdsByPurlType(purlType)

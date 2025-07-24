@@ -22,7 +22,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -96,7 +95,16 @@ func (m *ProjectModel) GetProjectByPurlName(purlName string, mineID int32) (Proj
 			" LEFT JOIN licenses g ON p.git_license_id = g.id"+
 			" WHERE purl_name = $1 AND mine_id = $2",
 		purlName, mineID)
-	defer CloseRows(rows)
+
+	defer func() {
+		if rows != nil {
+			err := rows.Close()
+			if err != nil {
+				m.s.Warnf("Problem closing Rows: %v", err)
+			}
+		}
+	}()
+
 	if err != nil {
 		m.s.Errorf("Error: Failed to query projects table for %v, %v: %v", purlName, mineID, err)
 		return Project{}, fmt.Errorf("failed to query the projects table: %v", err)
