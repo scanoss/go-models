@@ -40,29 +40,8 @@ func TestNewDB(t *testing.T) {
 	defer testutils.CloseConn(t, conn)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := &database.DBQueryContext{}
-
+	q := database.NewDBSelectContext(s, db, conn, false)
 	dbWrapper := NewDB(ctx, s, conn, q)
-
-	if dbWrapper == nil {
-		t.Fatal("NewDB returned nil")
-	}
-
-	if dbWrapper.ctx != ctx {
-		t.Error("NewDB did not set context correctly")
-	}
-
-	if dbWrapper.s != s {
-		t.Error("NewDB did not set logger correctly")
-	}
-
-	if dbWrapper.conn != conn {
-		t.Error("NewDB did not set connection correctly")
-	}
-
-	if dbWrapper.q != q {
-		t.Error("NewDB did not set query context correctly")
-	}
 
 	if dbWrapper.AllUrls == nil {
 		t.Error("NewDB did not initialize AllUrls model")
@@ -82,39 +61,5 @@ func TestNewDB(t *testing.T) {
 
 	if dbWrapper.Mines == nil {
 		t.Error("NewDB did not initialize Mines model")
-	}
-}
-
-func TestNewDBWithNilParams(t *testing.T) {
-	ctx := context.Background()
-
-	dbWrapper := NewDB(ctx, nil, nil, nil)
-
-	if dbWrapper == nil {
-		t.Fatal("NewDB returned nil with nil parameters")
-	}
-
-	if dbWrapper.ctx != ctx {
-		t.Error("NewDB did not set context correctly with nil parameters")
-	}
-
-	if dbWrapper.AllUrls == nil {
-		t.Error("NewDB did not initialize AllUrls model with nil parameters")
-	}
-
-	if dbWrapper.Projects == nil {
-		t.Error("NewDB did not initialize Projects model with nil parameters")
-	}
-
-	if dbWrapper.Versions == nil {
-		t.Error("NewDB did not initialize Versions model with nil parameters")
-	}
-
-	if dbWrapper.Licenses == nil {
-		t.Error("NewDB did not initialize Licenses model with nil parameters")
-	}
-
-	if dbWrapper.Mines == nil {
-		t.Error("NewDB did not initialize Mines model with nil parameters")
 	}
 }

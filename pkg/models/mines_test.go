@@ -41,10 +41,8 @@ func TestMines(t *testing.T) {
 	defer testutils.CloseConn(t, conn)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	if err != nil {
-		t.Fatalf("failed to load SQL test data: %v", err)
-	}
 	mine := NewMineModel(ctx, s, conn)
+
 	var purlType = "maven"
 	mineIds, err := mine.GetMineIdsByPurlType(purlType)
 	if err != nil {
@@ -74,6 +72,7 @@ func TestMines(t *testing.T) {
 	} else {
 		t.Errorf("mines.GetMineIdByPurlType() found for %v = %v", purlType, mineIds)
 	}
+
 	purlType = "npm"
 	mineIds, err = mine.GetMineIdsByPurlType(purlType)
 	if err != nil {
@@ -82,7 +81,7 @@ func TestMines(t *testing.T) {
 	fmt.Printf("Mine IDs for %v: %v\n", purlType, mineIds)
 }
 
-// TestMinesBadSql test bad queries without creating/loading the mines table.
+// TestMinesBadSql test queries without creating/loading the mines table.
 func TestMinesBadSql(t *testing.T) {
 	err := zlog.NewSugaredDevLogger()
 	if err != nil {
@@ -95,7 +94,6 @@ func TestMinesBadSql(t *testing.T) {
 	defer testutils.CloseDB(t, db)
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)
-	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	mine := NewMineModel(ctx, s, conn)
 	purlType := "NONEXISTENT"

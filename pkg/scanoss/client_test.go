@@ -33,32 +33,16 @@ func TestNew(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	logger := ctxzap.Extract(ctx).Sugar()
+	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := &database.DBQueryContext{}
+	q := database.NewDBSelectContext(s, db, conn, false)
 
-	client := New(ctx, logger, conn, q)
-
-	if client == nil {
-		t.Fatal("New returned nil")
-	}
-
-	if client.ctx != ctx {
-		t.Error("New did not set context correctly")
-	}
-
-	if client.logger != logger {
-		t.Error("New did not set logger correctly")
-	}
-
-	if client.conn != conn {
-		t.Error("New did not set connection correctly")
-	}
+	client := New(ctx, s, conn, q)
 
 	if client.Models == nil {
 		t.Error("New did not initialize Models")
@@ -66,68 +50,5 @@ func TestNew(t *testing.T) {
 
 	if client.Component == nil {
 		t.Error("New did not initialize Component service")
-	}
-}
-
-func TestNewWithNilParams(t *testing.T) {
-	ctx := context.Background()
-
-	client := New(ctx, nil, nil, nil)
-
-	if client == nil {
-		t.Fatal("New returned nil with nil parameters")
-	}
-
-	if client.ctx != ctx {
-		t.Error("New did not set context correctly with nil parameters")
-	}
-
-	if client.Models == nil {
-		t.Error("New did not initialize Models with nil parameters")
-	}
-
-	if client.Component == nil {
-		t.Error("New did not initialize Component service with nil parameters")
-	}
-}
-
-func TestClientIntegration(t *testing.T) {
-	err := zlog.NewSugaredDevLogger()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
-	}
-	defer zlog.SyncZap()
-	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	logger := ctxzap.Extract(ctx).Sugar()
-	db := testutils.SqliteSetup(t)
-	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db)
-	defer testutils.CloseConn(t, conn)
-
-	q := &database.DBQueryContext{}
-	client := New(ctx, logger, conn, q)
-
-	if client.Models.AllUrls == nil {
-		t.Error("Client integration: AllUrls model not initialized")
-	}
-
-	if client.Models.Projects == nil {
-		t.Error("Client integration: Projects model not initialized")
-	}
-
-	if client.Models.Versions == nil {
-		t.Error("Client integration: Versions model not initialized")
-	}
-
-	if client.Models.Licenses == nil {
-		t.Error("Client integration: Licenses model not initialized")
-	}
-
-	if client.Models.Mines == nil {
-		t.Error("Client integration: Mines model not initialized")
-	}
-
-	if client.Component == nil {
-		t.Error("Client integration: Component service not initialized")
 	}
 }

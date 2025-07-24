@@ -40,7 +40,9 @@ func TestVersionsSearch(t *testing.T) {
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
 	versionModel := NewVersionModel(ctx, s, conn)
+
 	var name = "1.0.0"
 	fmt.Printf("Searching for version: %v\n", name)
 	version, err := versionModel.GetVersionByName(name)
@@ -67,32 +69,32 @@ func TestVersionsSearch(t *testing.T) {
 	if err != nil {
 		t.Errorf("versions.GetVersionByName() error = %v", err)
 	}
-	if len(version.VersionName) != 0 {
+	if len(version.VersionName) > 0 {
 		t.Errorf("versions.GetVersionByName() - Expected no version returned from query")
 	}
 	fmt.Printf("Version: %#v\n", version)
 }
 
-//func TestVersionsSearchBadSql(t *testing.T) {
-//	err := zlog.NewSugaredDevLogger()
-//	if err != nil {
-//		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
-//	}
-//	defer zlog.SyncZap()
-//	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-//	s := ctxzap.Extract(ctx).Sugar()
-//
-//	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
-//	defer testutils.CloseDB(t, db)
-//	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-//	defer testutils.CloseConn(t, conn)
-//	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
-//
-//	versionModel := NewVersionModel(ctx, s, conn)
-//	_, err = versionModel.GetVersionByName("rubbish")
-//	if err == nil {
-//		t.Errorf("versions.GetVersionByName() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//}
+// TestVersionsSearchBadSql test queries without creating/loading the versions table
+func TestVersionsSearchBadSql(t *testing.T) {
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	ctx := ctxzap.ToContext(context.Background(), zlog.L)
+	s := ctxzap.Extract(ctx).Sugar()
+
+	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
+	defer testutils.CloseDB(t, db)
+	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
+	defer testutils.CloseConn(t, conn)
+
+	versionModel := NewVersionModel(ctx, s, conn)
+	_, err = versionModel.GetVersionByName("rubbish")
+	if err == nil {
+		t.Errorf("versions.GetVersionByName() error = did not get an error")
+	} else {
+		fmt.Printf("Got expected error = %v\n", err)
+	}
+}

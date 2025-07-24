@@ -103,31 +103,32 @@ func TestProjectsSearch(t *testing.T) {
 	}
 }
 
-//func TestProjectsSearchBadSql(t *testing.T) {
-//	err := zlog.NewSugaredDevLogger()
-//	if err != nil {
-//		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
-//	}
-//	defer zlog.SyncZap()
-//	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-//	s := ctxzap.Extract(ctx).Sugar()
-//	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
-//	defer testutils.CloseDB(t, db)
-//	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-//	defer testutils.CloseConn(t, conn)
-//	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
-//
-//	projectsModel := NewProjectModel(ctx, s, conn)
-//	_, err = projectsModel.GetProjectsByPurlName("rubbish", "rubbish")
-//	if err == nil {
-//		t.Errorf("projects.GetProjectsByPurlName() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//	_, err = projectsModel.GetProjectByPurlName("rubbish", 2)
-//	if err == nil {
-//		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//}
+// TestProjectsSearchBadSql test queries without creating/loading the project table
+func TestProjectsSearchBadSql(t *testing.T) {
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	ctx := ctxzap.ToContext(context.Background(), zlog.L)
+	s := ctxzap.Extract(ctx).Sugar()
+	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
+	defer testutils.CloseDB(t, db)
+	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
+	defer testutils.CloseConn(t, conn)
+
+	projectsModel := NewProjectModel(ctx, s, conn)
+
+	_, err = projectsModel.GetProjectsByPurlName("rubbish", "rubbish")
+	if err == nil {
+		t.Errorf("projects.GetProjectsByPurlName() error = did not get an error")
+	} else {
+		fmt.Printf("Got expected error = %v\n", err)
+	}
+	_, err = projectsModel.GetProjectByPurlName("rubbish", 2)
+	if err == nil {
+		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
+	} else {
+		fmt.Printf("Got expected error = %v\n", err)
+	}
+}

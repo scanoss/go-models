@@ -39,8 +39,8 @@ func TestLicensesSearch(t *testing.T) {
 	defer testutils.CloseDB(t, db)
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)
-
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
 	licenseModel := NewLicenseModel(ctx, s, conn)
 
 	var name = "MIT"
@@ -72,9 +72,8 @@ func TestLicensesSearch(t *testing.T) {
 		t.Errorf("licenses.GetLicenseByName() error = %v", err)
 	}
 	if len(license.LicenseName) != 0 {
-		t.Errorf("licenses.GetLicenseByName() No license expected from query")
+		t.Errorf("licenses.GetLicenseByName() License returned when one shouldn't")
 	}
-	fmt.Printf("Created License: %#v\n", license)
 }
 
 func TestLicensesSearchId(t *testing.T) {
@@ -89,22 +88,18 @@ func TestLicensesSearchId(t *testing.T) {
 	defer testutils.CloseDB(t, db)
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)
-
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	if err != nil {
-		t.Fatalf("failed to load SQL test data: %v", err)
-	}
 	licenseModel := NewLicenseModel(ctx, s, conn)
 
 	name := "MIT"
 	fmt.Printf("Searching for license: %v\n", name)
 	license, err := licenseModel.GetLicenseByName(name)
 	if err != nil {
-		t.Errorf("licenses.saveLicense() error = %v", err)
+		t.Errorf("licenseModel.GetLicenseByName() error = %v", err)
 	}
 	if len(license.LicenseName) == 0 {
-		t.Errorf("licenses.saveLicense() No license returned from query")
+		t.Errorf("licenseModel.GetLicenseByName() No license returned from query")
 	}
 	fmt.Printf("Found License: %#v\n", license)
 
@@ -139,42 +134,6 @@ func TestLicensesSearchId(t *testing.T) {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
 }
-
-//func TestLicensesSearchBadSql(t *testing.T) {
-//	err := zlog.NewSugaredDevLogger()
-//	if err != nil {
-//		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
-//	}
-//	defer zlog.SyncZap()
-//	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-//	s := ctxzap.Extract(ctx).Sugar()
-//	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
-//	defer testutils.CloseDB(t, db)
-//	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-//	defer testutils.CloseConn(t, conn)
-//	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
-//
-//	licenseModel := NewLicenseModel(ctx, s, conn)
-//	_, err = licenseModel.GetLicenseByName("rubbish")
-//	if err == nil {
-//		t.Errorf("licenses.GetLicenseByName() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//	_, err = licenseModel.GetLicenseByName("rubbish")
-//	if err == nil {
-//		t.Errorf("licenses.GetLicenseByName() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//
-//	_, err = licenseModel.GetLicenseByID(100)
-//	if err == nil {
-//		t.Errorf("licenses.GetLicenseByID() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//}
 
 func TestCleanseLicenseName(t *testing.T) {
 	err := zlog.NewSugaredDevLogger()
