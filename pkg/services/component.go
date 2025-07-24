@@ -164,23 +164,5 @@ func (cs *ComponentService) pickOneUrl(allUrls []models.AllURL, purlName, purlTy
 	url.URL, _ = purlutils.ProjectUrl(purlName, purlType)
 
 	cs.s.Debugf("Selected version: %#v", url)
-	if len(url.License) == 0 && cs.models.Projects != nil { // Check for a project license if we don't have a component one
-		project, err := cs.models.Projects.GetProjectByPurlName(purlName, url.MineID)
-		switch {
-		case err != nil:
-			cs.s.Warnf("Problem searching projects table for %v, %v", purlName, purlType)
-		case len(project.License) > 0:
-			cs.s.Debugf("Adding project license data to %v from %v", url, project)
-			url.License = project.License
-			url.IsSpdx = project.IsSpdx
-			url.LicenseID = project.LicenseID
-		case len(project.GitLicense) > 0:
-			cs.s.Debugf("Adding project git license data to %v from %v", url, project)
-			url.License = project.GitLicense
-			url.IsSpdx = project.GitIsSpdx
-			url.LicenseID = project.GitLicenseID
-		}
-	}
-
 	return url, nil // Return the best component match
 }
