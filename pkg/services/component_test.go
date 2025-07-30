@@ -43,7 +43,7 @@ func TestNewComponentService(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewDB(ctx, s, conn, q)
+	modelsDB := models.NewModels(ctx, s, conn, q)
 
 	service := NewComponentService(ctx, s, modelsDB)
 
@@ -67,7 +67,7 @@ func TestGetComponentEmptyPurl(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewDB(ctx, s, conn, q)
+	modelsDB := models.NewModels(ctx, s, conn, q)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	req := types.ComponentRequest{
@@ -96,7 +96,7 @@ func TestGetComponentInvalidPurl(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewDB(ctx, s, conn, q)
+	modelsDB := models.NewModels(ctx, s, conn, q)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	req := types.ComponentRequest{
@@ -125,7 +125,7 @@ func TestGetComponentValidPurlButInvalidPurlName(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewDB(ctx, s, conn, q)
+	modelsDB := models.NewModels(ctx, s, conn, q)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	req := types.ComponentRequest{
@@ -154,7 +154,7 @@ func TestPickOneUrl(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewDB(ctx, s, conn, q)
+	modelsDB := models.NewModels(ctx, s, conn, q)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	tests := []struct {
@@ -286,7 +286,7 @@ func TestGetComponent(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewDB(ctx, s, conn, q)
+	modelsDB := models.NewModels(ctx, s, conn, q)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	tests := []struct {

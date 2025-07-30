@@ -33,16 +33,15 @@ type Client struct {
 	conn *sqlx.Conn
 	q    *database.DBQueryContext
 
-	Models    *models.DB
+	Models    *models.Models
 	Component *services.ComponentService
 }
 
 // New creates a SCANOSS Model Client.
-// NOTE: DB Connection are handled externally, the library do not close neither opens connections
 // TODO: remove conn *sqlx.Conn and rely only on *database.DBQueryContext
 func New(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *Client {
 	// Initialize data access layer
-	models := models.NewDB(ctx, s, conn, q)
+	models := models.NewModels(ctx, s, conn, q)
 
 	// Initialize business logic layer
 	component := services.NewComponentService(ctx, s, models)

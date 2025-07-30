@@ -41,25 +41,25 @@ func TestNewDB(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, conn, false)
-	dbWrapper := NewDB(ctx, s, conn, q)
+	models := NewModels(ctx, s, conn, q)
 
-	if dbWrapper.AllUrls == nil {
-		t.Error("NewDB did not initialize AllUrls model")
+	if models.AllUrls == nil {
+		t.Error("NewModels did not initialize AllUrls model")
 	}
 
-	if dbWrapper.Projects == nil {
-		t.Error("NewDB did not initialize Projects model")
+	if models.Projects == nil {
+		t.Error("NewModels did not initialize Projects model")
 	}
 
-	if dbWrapper.Versions == nil {
-		t.Error("NewDB did not initialize Versions model")
+	if models.Versions == nil {
+		t.Error("NewModels did not initialize Versions model")
 	}
 
-	if dbWrapper.Licenses == nil {
-		t.Error("NewDB did not initialize Licenses model")
+	if models.Licenses == nil {
+		t.Error("NewModels did not initialize Licenses model")
 	}
 
-	if dbWrapper.Mines == nil {
-		t.Error("NewDB did not initialize Mines model")
+	if models.Mines == nil {
+		t.Error("NewModels did not initialize Mines model")
 	}
 }

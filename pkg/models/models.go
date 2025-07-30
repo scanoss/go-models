@@ -24,9 +24,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// DB provides unified access to all SCANOSS data models.
+// Models provides unified access to all SCANOSS data models.
 // It maintains database connections and provides access to individual model instances.
-type DB struct {
+type Models struct {
 	ctx  context.Context
 	s    *zap.SugaredLogger
 	conn *sqlx.Conn //TODO: refactor all models and replace with *database.DBQueryContext
@@ -39,21 +39,21 @@ type DB struct {
 	Mines    *MineModel
 }
 
-// NewDB creates a new instance of the unified SCANOSS models database wrapper.
+// NewModels creates a new instance of the unified SCANOSS models database wrapper.
 // It initializes all individual models and sets up their dependencies.
-func NewDB(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *DB {
-	db := &DB{
+func NewModels(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *Models {
+	models := &Models{
 		ctx:  ctx,
 		s:    s,
 		conn: conn,
 		q:    q,
 	}
 
-	db.Projects = NewProjectModel(ctx, s, conn)
-	db.Versions = NewVersionModel(ctx, s, conn)
-	db.Licenses = NewLicenseModel(ctx, s, conn)
-	db.Mines = NewMineModel(ctx, s, conn)
-	db.AllUrls = NewAllURLModel(ctx, s, q)
+	models.Projects = NewProjectModel(ctx, s, conn)
+	models.Versions = NewVersionModel(ctx, s, conn)
+	models.Licenses = NewLicenseModel(ctx, s, conn)
+	models.Mines = NewMineModel(ctx, s, conn)
+	models.AllUrls = NewAllURLModel(ctx, s, q)
 
-	return db
+	return models
 }

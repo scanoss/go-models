@@ -35,7 +35,7 @@ func TestMines(t *testing.T) {
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
+	db := testutils.SqliteSetup(t) // Setup SQL Lite Models
 	defer testutils.CloseDB(t, db)
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)
@@ -90,7 +90,7 @@ func TestMinesBadSql(t *testing.T) {
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
+	db := testutils.SqliteSetup(t) // Setup SQL Lite Models
 	defer testutils.CloseDB(t, db)
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)

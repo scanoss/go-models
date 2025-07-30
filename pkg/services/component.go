@@ -32,12 +32,12 @@ import (
 type ComponentService struct {
 	ctx    context.Context
 	s      *zap.SugaredLogger
-	models *models.DB
+	models *models.Models
 }
 
 // NewComponentService creates a new ComponentService instance.
-// Uses the DB wrapper to access all necessary data access methods.
-func NewComponentService(ctx context.Context, s *zap.SugaredLogger, db *models.DB) *ComponentService {
+// Uses the Models wrapper to access all necessary data access methods.
+func NewComponentService(ctx context.Context, s *zap.SugaredLogger, db *models.Models) *ComponentService {
 	return &ComponentService{
 		ctx:    ctx,
 		s:      s,
