@@ -23,6 +23,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"regexp"
 	"strings"
 
@@ -31,9 +32,10 @@ import (
 )
 
 type LicenseModel struct {
-	ctx  context.Context
-	s    *zap.SugaredLogger
-	conn *sqlx.Conn
+	ctx context.Context
+	s   *zap.SugaredLogger
+	q   *database.DBQueryContext
+	db  *sqlx.DB
 }
 
 type License struct {
@@ -48,8 +50,8 @@ var bannedLicSuffixes = []string{".md", ".txt", ".html"}                        
 var whiteSpaceRegex = regexp.MustCompile(`\s+`)                                                             // generic whitespace regex
 
 // NewLicenseModel create a new instance of the License Model.
-func NewLicenseModel(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn) *LicenseModel {
-	return &LicenseModel{ctx: ctx, s: s, conn: conn}
+func NewLicenseModel(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *LicenseModel {
+	return &LicenseModel{ctx: ctx, s: s, q: q, db: db}
 }
 
 // GetLicenseByID retrieves license data by the given row ID.
@@ -59,7 +61,7 @@ func (m *LicenseModel) GetLicenseByID(id int32) (License, error) {
 		return License{}, errors.New("please specify a valid License Name to query")
 	}
 	var license License
-	err := m.conn.QueryRowxContext(m.ctx,
+	err := m.db.QueryRowxContext(m.ctx,
 		"SELECT id, license_name, spdx_id, is_spdx FROM licenses"+
 			" WHERE id = $1",
 		id).StructScan(&license)
@@ -77,7 +79,7 @@ func (m *LicenseModel) GetLicenseByName(name string) (License, error) {
 		return License{}, nil
 	}
 	var license License
-	err := m.conn.QueryRowxContext(m.ctx,
+	err := m.db.QueryRowxContext(m.ctx,
 		"SELECT id, license_name, spdx_id, is_spdx FROM licenses"+
 			" WHERE license_name = $1",
 		name,

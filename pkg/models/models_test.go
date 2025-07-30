@@ -36,12 +36,11 @@ func TestNewDB(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-	models := NewModels(ctx, s, conn, q)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	models := NewModels(ctx, s, q, db)
 
 	if models.AllUrls == nil {
 		t.Error("NewModels did not initialize AllUrls model")

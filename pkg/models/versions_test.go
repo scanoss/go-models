@@ -19,6 +19,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
@@ -34,14 +35,12 @@ func TestVersionsSearch(t *testing.T) {
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+	q := database.NewDBSelectContext(s, db, nil, false)
 
-	versionModel := NewVersionModel(ctx, s, conn)
+	versionModel := NewVersionModel(ctx, s, q, db)
 
 	var name = "1.0.0"
 	fmt.Printf("Searching for version: %v\n", name)
@@ -84,13 +83,11 @@ func TestVersionsSearchBadSql(t *testing.T) {
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
+	q := database.NewDBSelectContext(s, db, nil, false)
 
-	versionModel := NewVersionModel(ctx, s, conn)
+	versionModel := NewVersionModel(ctx, s, q, db)
 	_, err = versionModel.GetVersionByName("rubbish")
 	if err == nil {
 		t.Errorf("versions.GetVersionByName() error = did not get an error")

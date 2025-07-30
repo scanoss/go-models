@@ -21,17 +21,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"go.uber.org/zap"
 )
 
 // AllUrlsModel provides database access for URL information.
 type AllUrlsModel struct {
-	ctx  context.Context
-	s    *zap.SugaredLogger
-	conn *sqlx.Conn
-	q    *database.DBQueryContext
+	ctx context.Context
+	s   *zap.SugaredLogger
+	q   *database.DBQueryContext
 }
 
 // AllURL represents a row on the AllURL table
@@ -102,7 +100,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(purlName, purlType, purlVers
 		return nil, errors.New("please specify a valid Purl Version to query")
 	}
 
-	//This query only adds a filter for versions. TODO: unify methods GetURLsByPurlNameType & GetURLsByPurlNameTypeVersion
+	//This query is same as GetURLsByPurlNameType but adds a WHERE clause for versions
 	query := "SELECT component, v.version_name AS version, v.semver AS semver," +
 		" l.license_name AS license, l.spdx_id AS license_id, l.is_spdx AS is_spdx," +
 		" purl_name, mine_id FROM all_urls u" +

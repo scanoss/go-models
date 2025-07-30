@@ -38,12 +38,11 @@ func TestNewComponentService(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewModels(ctx, s, conn, q)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	modelsDB := models.NewModels(ctx, s, q, db)
 
 	service := NewComponentService(ctx, s, modelsDB)
 
@@ -62,12 +61,11 @@ func TestGetComponentEmptyPurl(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewModels(ctx, s, conn, q)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	modelsDB := models.NewModels(ctx, s, q, db)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	req := types.ComponentRequest{
@@ -91,12 +89,11 @@ func TestGetComponentInvalidPurl(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewModels(ctx, s, conn, q)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	modelsDB := models.NewModels(ctx, s, q, db)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	req := types.ComponentRequest{
@@ -120,12 +117,11 @@ func TestGetComponentValidPurlButInvalidPurlName(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewModels(ctx, s, conn, q)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	modelsDB := models.NewModels(ctx, s, q, db)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	req := types.ComponentRequest{
@@ -149,12 +145,11 @@ func TestPickOneUrl(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t)
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db)
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewModels(ctx, s, conn, q)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	modelsDB := models.NewModels(ctx, s, q, db)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	tests := []struct {
@@ -281,12 +276,11 @@ func TestGetComponent(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t)
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db)
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-	modelsDB := models.NewModels(ctx, s, conn, q)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	modelsDB := models.NewModels(ctx, s, q, db)
 	service := NewComponentService(ctx, s, modelsDB)
 
 	tests := []struct {

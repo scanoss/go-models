@@ -18,8 +18,8 @@ package scanoss
 
 import (
 	"context"
-
 	"github.com/jmoiron/sqlx"
+
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"github.com/scanoss/go-models/pkg/models"
 	"github.com/scanoss/go-models/pkg/services"
@@ -28,29 +28,26 @@ import (
 
 // Client provides a unified interface to SCANOSS data models and services.
 type Client struct {
-	ctx  context.Context
-	s    *zap.SugaredLogger
-	conn *sqlx.Conn
-	q    *database.DBQueryContext
+	ctx context.Context
+	s   *zap.SugaredLogger
+	q   *database.DBQueryContext
+	db  *sqlx.DB //TODO: remove db *sqlx.DB once QueryRowxContext is implemented on database.DBQueryContext and used across pkg/models
 
 	Models    *models.Models
 	Component *services.ComponentService
 }
 
 // New creates a SCANOSS Model Client.
-// TODO: remove conn *sqlx.Conn and rely only on *database.DBQueryContext
-func New(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *Client {
-	// Initialize data access layer
-	models := models.NewModels(ctx, s, conn, q)
+func New(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *Client {
+	m := models.NewModels(ctx, s, q, db)
 
-	// Initialize business logic layer
-	component := services.NewComponentService(ctx, s, models)
+	//Initialize services
+	component := services.NewComponentService(ctx, s, m)
 
 	return &Client{
 		ctx:       ctx,
 		s:         s,
-		conn:      conn,
-		Models:    models,
+		Models:    m,
 		Component: component,
 	}
 }

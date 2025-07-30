@@ -23,15 +23,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
 type VersionModel struct {
-	ctx  context.Context
-	s    *zap.SugaredLogger
-	conn *sqlx.Conn
+	ctx context.Context
+	s   *zap.SugaredLogger
+	q   *database.DBQueryContext
+	db  *sqlx.DB
 }
 
 type Version struct {
@@ -41,8 +43,8 @@ type Version struct {
 }
 
 // NewVersionModel creates a new instance of the Version Model.
-func NewVersionModel(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn) *VersionModel {
-	return &VersionModel{ctx: ctx, s: s, conn: conn}
+func NewVersionModel(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *VersionModel {
+	return &VersionModel{ctx: ctx, s: s, q: q, db: db}
 }
 
 // GetVersionByName gets the given version from the versions table.
@@ -52,7 +54,7 @@ func (m *VersionModel) GetVersionByName(name string) (Version, error) {
 		return Version{}, errors.New("please specify a valid Version Name to query")
 	}
 	var version Version
-	err := m.conn.QueryRowxContext(m.ctx,
+	err := m.db.QueryRowxContext(m.ctx,
 		"SELECT id, version_name, semver FROM versions"+
 			" WHERE version_name = $1",
 		name).StructScan(&version)

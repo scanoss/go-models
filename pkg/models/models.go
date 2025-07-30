@@ -18,8 +18,8 @@ package models
 
 import (
 	"context"
-
 	"github.com/jmoiron/sqlx"
+
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"go.uber.org/zap"
 )
@@ -27,10 +27,10 @@ import (
 // Models provides unified access to all SCANOSS data models.
 // It maintains database connections and provides access to individual model instances.
 type Models struct {
-	ctx  context.Context
-	s    *zap.SugaredLogger
-	conn *sqlx.Conn //TODO: refactor all models and replace with *database.DBQueryContext
-	q    *database.DBQueryContext
+	ctx context.Context
+	s   *zap.SugaredLogger
+	q   *database.DBQueryContext
+	db  *sqlx.DB
 
 	AllUrls  *AllUrlsModel
 	Projects *ProjectModel
@@ -41,18 +41,18 @@ type Models struct {
 
 // NewModels creates a new instance of the unified SCANOSS models database wrapper.
 // It initializes all individual models and sets up their dependencies.
-func NewModels(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn, q *database.DBQueryContext) *Models {
+func NewModels(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *Models {
 	models := &Models{
-		ctx:  ctx,
-		s:    s,
-		conn: conn,
-		q:    q,
+		ctx: ctx,
+		s:   s,
+		q:   q,
+		db:  db,
 	}
 
-	models.Projects = NewProjectModel(ctx, s, conn)
-	models.Versions = NewVersionModel(ctx, s, conn)
-	models.Licenses = NewLicenseModel(ctx, s, conn)
-	models.Mines = NewMineModel(ctx, s, conn)
+	models.Projects = NewProjectModel(ctx, s, q, db)
+	models.Versions = NewVersionModel(ctx, s, q, db)
+	models.Licenses = NewLicenseModel(ctx, s, q, db)
+	models.Mines = NewMineModel(ctx, s, q)
 	models.AllUrls = NewAllURLModel(ctx, s, q)
 
 	return models

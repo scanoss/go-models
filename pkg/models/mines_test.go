@@ -19,6 +19,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
@@ -37,11 +38,11 @@ func TestMines(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite Models
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
+
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	mine := NewMineModel(ctx, s, conn)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	mine := NewMineModel(ctx, s, q)
 
 	var purlType = "maven"
 	mineIds, err := mine.GetMineIdsByPurlType(purlType)
@@ -92,10 +93,10 @@ func TestMinesBadSql(t *testing.T) {
 	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite Models
 	defer testutils.CloseDB(t, db)
-	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
-	defer testutils.CloseConn(t, conn)
 
-	mine := NewMineModel(ctx, s, conn)
+	q := database.NewDBSelectContext(s, db, nil, false)
+	mine := NewMineModel(ctx, s, q)
+
 	purlType := "NONEXISTENT"
 	mineIds, err := mine.GetMineIdsByPurlType(purlType)
 	if err != nil {
