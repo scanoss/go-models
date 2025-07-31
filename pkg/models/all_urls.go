@@ -38,7 +38,7 @@ type AllURL struct {
 	Version   string `db:"version"`
 	SemVer    string `db:"semver"`
 	License   string `db:"license"`
-	LicenseID string `db:"license_id"`
+	LicenseID int32  `db:"license_id"`
 	IsSpdx    bool   `db:"is_spdx"`
 	PurlName  string `db:"purl_name"`
 	MineID    int32  `db:"mine_id"`
@@ -66,7 +66,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameType(purlName, purlType string) ([]AllUR
 	}
 
 	query := "SELECT component, v.version_name AS version, v.semver AS semver," +
-		" l.license_name AS license, l.spdx_id AS license_id, l.is_spdx AS is_spdx," +
+		" l.license_name AS license, l.is_spdx AS is_spdx, u.license_id," +
 		" purl_name, mine_id FROM all_urls u" +
 		" LEFT JOIN mines m ON u.mine_id = m.id" +
 		" LEFT JOIN licenses l ON u.license_id = l.id" +
@@ -102,7 +102,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(purlName, purlType, purlVers
 
 	//This query is same as GetURLsByPurlNameType but adds a WHERE clause for versions
 	query := "SELECT component, v.version_name AS version, v.semver AS semver," +
-		" l.license_name AS license, l.spdx_id AS license_id, l.is_spdx AS is_spdx," +
+		" l.license_name AS license, l.is_spdx AS is_spdx, u.license_id," +
 		" purl_name, mine_id FROM all_urls u" +
 		" LEFT JOIN mines m ON u.mine_id = m.id" +
 		" LEFT JOIN licenses l ON u.license_id = l.id" +
