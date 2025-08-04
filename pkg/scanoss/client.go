@@ -17,36 +17,30 @@
 package scanoss
 
 import (
-	"context"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"github.com/scanoss/go-models/pkg/models"
 	"github.com/scanoss/go-models/pkg/services"
-	"go.uber.org/zap"
 )
 
 // Client provides a unified interface to SCANOSS data models and services.
 type Client struct {
-	ctx context.Context
-	s   *zap.SugaredLogger
-	q   *database.DBQueryContext
-	db  *sqlx.DB //TODO: remove db *sqlx.DB once QueryRowxContext is implemented on database.DBQueryContext and used across pkg/models
+	q  *database.DBQueryContext
+	db *sqlx.DB //TODO: remove db *sqlx.DB once QueryRowxContext is implemented on database.DBQueryContext and used across pkg/models
 
 	Models    *models.Models
 	Component *services.ComponentService
 }
 
 // New creates a SCANOSS Model Client.
-func New(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *Client {
-	m := models.NewModels(ctx, s, q, db)
+func New(q *database.DBQueryContext, db *sqlx.DB) *Client {
+	m := models.NewModels(q, db)
 
 	//Initialize services
 	component := services.NewComponentService(m)
 
 	return &Client{
-		ctx:       ctx,
-		s:         s,
 		Models:    m,
 		Component: component,
 	}

@@ -42,7 +42,7 @@ func TestNew(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, conn, false)
 
-	client := New(ctx, s, q, db)
+	client := New(q, db)
 
 	if client.Models == nil {
 		t.Error("New did not initialize Models")

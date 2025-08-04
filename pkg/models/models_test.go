@@ -40,7 +40,7 @@ func TestNewDB(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	models := NewModels(ctx, s, q, db)
+	models := NewModels(q, db)
 
 	if models.AllUrls == nil {
 		t.Error("NewModels did not initialize AllUrls model")
