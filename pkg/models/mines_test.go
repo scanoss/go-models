@@ -42,24 +42,24 @@ func TestMines(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	mine := NewMineModel(ctx, s, q)
+	mine := NewMineModel(q)
 
 	var purlType = "maven"
-	mineIds, err := mine.GetMineIdsByPurlType(purlType)
+	mineIds, err := mine.GetMineIdsByPurlType(ctx, purlType)
 	if err != nil {
 		t.Errorf("mines.GetMineIdByPurlType() error = %v", err)
 	}
 	fmt.Printf("Mine ID for %v: %v\n", purlType, mineIds)
 
 	purlType = "gem"
-	mineIds, err = mine.GetMineIdsByPurlType(purlType)
+	mineIds, err = mine.GetMineIdsByPurlType(ctx, purlType)
 	if err != nil {
 		t.Errorf("mines.GetMineIdByPurlType() error = %v", err)
 	}
 	fmt.Printf("Mine ID for %v: %v\n", purlType, mineIds)
 
 	purlType = ""
-	mineIds, err = mine.GetMineIdsByPurlType(purlType)
+	mineIds, err = mine.GetMineIdsByPurlType(ctx, purlType)
 	if err != nil {
 		fmt.Printf("Mine ID not found: %v\n", err)
 	} else {
@@ -67,7 +67,7 @@ func TestMines(t *testing.T) {
 	}
 
 	purlType = "NONEXISTENT"
-	mineIds, err = mine.GetMineIdsByPurlType(purlType)
+	mineIds, err = mine.GetMineIdsByPurlType(ctx, purlType)
 	if err != nil {
 		fmt.Printf("Mine ID not found: %v\n", err)
 	} else {
@@ -75,7 +75,7 @@ func TestMines(t *testing.T) {
 	}
 
 	purlType = "npm"
-	mineIds, err = mine.GetMineIdsByPurlType(purlType)
+	mineIds, err = mine.GetMineIdsByPurlType(ctx, purlType)
 	if err != nil {
 		t.Errorf("mines.GetMineIdsByPurlType() error = %v", err)
 	}
@@ -95,10 +95,10 @@ func TestMinesBadSql(t *testing.T) {
 	defer testutils.CloseDB(t, db)
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	mine := NewMineModel(ctx, s, q)
+	mine := NewMineModel(q)
 
 	purlType := "NONEXISTENT"
-	mineIds, err := mine.GetMineIdsByPurlType(purlType)
+	mineIds, err := mine.GetMineIdsByPurlType(ctx, purlType)
 	if err != nil {
 		fmt.Printf("Mine ID not found: %v\n", err)
 	} else {

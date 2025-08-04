@@ -22,15 +22,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
-
-	"go.uber.org/zap"
 )
 
 type MineModel struct {
-	ctx context.Context
-	s   *zap.SugaredLogger
-	q   *database.DBQueryContext
+	q *database.DBQueryContext
 }
 
 type Mine struct {
@@ -40,22 +37,23 @@ type Mine struct {
 }
 
 // NewMineModel creates a new instance of the 'Mine' Model.
-func NewMineModel(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext) *MineModel {
-	return &MineModel{ctx: ctx, s: s, q: q}
+func NewMineModel(q *database.DBQueryContext) *MineModel {
+	return &MineModel{q: q}
 }
 
 // GetMineIdsByPurlType retrieves a list of the Purl Type IDs associated with the given Purl Type (string).
-func (m *MineModel) GetMineIdsByPurlType(purlType string) ([]int32, error) {
+func (m *MineModel) GetMineIdsByPurlType(ctx context.Context, purlType string) ([]int32, error) {
+	s := ctxzap.Extract(ctx).Sugar()
 	if len(purlType) == 0 {
-		m.s.Error("Please specify a Purl Type to query")
+		s.Error("Please specify a Purl Type to query")
 		return nil, errors.New("please specify a Purl Type to query")
 	}
 	var mines []Mine
-	err := m.q.SelectContext(m.ctx, &mines,
+	err := m.q.SelectContext(ctx, &mines,
 		"SELECT id,mine_name,purl_type FROM mines WHERE purl_type = $1", purlType,
 	)
 	if err != nil {
-		m.s.Errorf("Error: Failed to query mines table for %v: %v", purlType, err)
+		s.Errorf("Error: Failed to query mines table for %v: %v", purlType, err)
 		return nil, fmt.Errorf("failed to query the mines table: %v", err)
 	}
 	if len(mines) > 0 {
@@ -65,6 +63,6 @@ func (m *MineModel) GetMineIdsByPurlType(purlType string) ([]int32, error) {
 		}
 		return mineIds, nil
 	}
-	m.s.Error("No entries found in the mines table.")
+	s.Error("No entries found in the mines table.")
 	return nil, errors.New("no entry in mines table")
 }
