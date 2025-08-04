@@ -23,19 +23,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"regexp"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 )
 
 type LicenseModel struct {
-	ctx context.Context
-	s   *zap.SugaredLogger
-	q   *database.DBQueryContext
-	db  *sqlx.DB
+	q  *database.DBQueryContext
+	db *sqlx.DB
 }
 
 type License struct {
@@ -50,42 +48,44 @@ var bannedLicSuffixes = []string{".md", ".txt", ".html"}                        
 var whiteSpaceRegex = regexp.MustCompile(`\s+`)                                                             // generic whitespace regex
 
 // NewLicenseModel create a new instance of the License Model.
-func NewLicenseModel(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *LicenseModel {
-	return &LicenseModel{ctx: ctx, s: s, q: q, db: db}
+func NewLicenseModel(q *database.DBQueryContext, db *sqlx.DB) *LicenseModel {
+	return &LicenseModel{q: q, db: db}
 }
 
 // GetLicenseByID retrieves license data by the given row ID.
-func (m *LicenseModel) GetLicenseByID(id int32) (License, error) {
+func (m *LicenseModel) GetLicenseByID(ctx context.Context, id int32) (License, error) {
+	s := ctxzap.Extract(ctx).Sugar()
 	if id < 0 {
-		m.s.Error("Please specify a valid License ID to query")
+		s.Error("Please specify a valid License ID to query")
 		return License{}, errors.New("please specify a valid License Name to query")
 	}
 	var license License
-	err := m.db.QueryRowxContext(m.ctx,
+	err := m.db.QueryRowxContext(ctx,
 		"SELECT id, license_name, spdx_id, is_spdx FROM licenses"+
 			" WHERE id = $1",
 		id).StructScan(&license)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		m.s.Errorf("Error: Failed to query license table for %v: %#v", id, err)
+		s.Errorf("Error: Failed to query license table for %v: %#v", id, err)
 		return License{}, fmt.Errorf("failed to query the license table: %v", err)
 	}
 	return license, nil
 }
 
 // GetLicenseByName retrieves the license details for the given license name.
-func (m *LicenseModel) GetLicenseByName(name string) (License, error) {
+func (m *LicenseModel) GetLicenseByName(ctx context.Context, name string) (License, error) {
+	s := ctxzap.Extract(ctx).Sugar()
 	if len(name) == 0 {
-		m.s.Warn("No License Name specified to query")
+		s.Warn("No License Name specified to query")
 		return License{}, nil
 	}
 	var license License
-	err := m.db.QueryRowxContext(m.ctx,
+	err := m.db.QueryRowxContext(ctx,
 		"SELECT id, license_name, spdx_id, is_spdx FROM licenses"+
 			" WHERE license_name = $1",
 		name,
 	).StructScan(&license)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		m.s.Errorf("Failed to query license table for %v: %v", name, err)
+		s.Errorf("Failed to query license table for %v: %v", name, err)
 		return License{}, fmt.Errorf("failed to query the license table: %v", err)
 	}
 

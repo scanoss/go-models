@@ -42,11 +42,11 @@ func TestLicensesSearch(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, nil, false)
 
-	licenseModel := NewLicenseModel(ctx, s, q, db)
+	licenseModel := NewLicenseModel(q, db)
 
 	var name = "MIT"
 	fmt.Printf("Searching for license: %v\n", name)
-	license, err := licenseModel.GetLicenseByName(name)
+	license, err := licenseModel.GetLicenseByName(ctx, name)
 	if err != nil {
 		t.Errorf("licenses.GetLicenseByName() error = %v", err)
 	}
@@ -57,7 +57,7 @@ func TestLicensesSearch(t *testing.T) {
 
 	name = ""
 	fmt.Printf("Searching for license: %v\n", name)
-	license, err = licenseModel.GetLicenseByName(name)
+	license, err = licenseModel.GetLicenseByName(ctx, name)
 	if err != nil {
 		t.Errorf("licenses.GetLicenseByName() error = %v", err)
 	}
@@ -68,7 +68,7 @@ func TestLicensesSearch(t *testing.T) {
 
 	name = "Unknown License"
 	fmt.Printf("Searching for license: %v\n", name)
-	license, err = licenseModel.GetLicenseByName(name)
+	license, err = licenseModel.GetLicenseByName(ctx, name)
 	if err != nil {
 		t.Errorf("licenses.GetLicenseByName() error = %v", err)
 	}
@@ -92,11 +92,11 @@ func TestLicensesSearchId(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, nil, false)
 
-	licenseModel := NewLicenseModel(ctx, s, q, db)
+	licenseModel := NewLicenseModel(q, db)
 
 	name := "MIT"
 	fmt.Printf("Searching for license: %v\n", name)
-	license, err := licenseModel.GetLicenseByName(name)
+	license, err := licenseModel.GetLicenseByName(ctx, name)
 	if err != nil {
 		t.Errorf("licenseModel.GetLicenseByName() error = %v", err)
 	}
@@ -107,7 +107,7 @@ func TestLicensesSearchId(t *testing.T) {
 
 	id := license.ID
 	fmt.Printf("Searching for license by id: %v\n", id)
-	license, err = licenseModel.GetLicenseByID(id)
+	license, err = licenseModel.GetLicenseByID(ctx, id)
 	if err != nil {
 		t.Errorf("licenses.GetLicenseByID() error = %v", err)
 	}
@@ -118,7 +118,7 @@ func TestLicensesSearchId(t *testing.T) {
 
 	id = 109
 	fmt.Printf("Searching for license by id: %v\n", id)
-	license, err = licenseModel.GetLicenseByID(id)
+	license, err = licenseModel.GetLicenseByID(ctx, id)
 	if err != nil {
 		t.Errorf("licenses.GetLicenseByID() error = %v", err)
 	}
@@ -129,7 +129,7 @@ func TestLicensesSearchId(t *testing.T) {
 
 	id = -1
 	fmt.Printf("Searching for license by id: %v\n", id)
-	_, err = licenseModel.GetLicenseByID(id)
+	_, err = licenseModel.GetLicenseByID(ctx, id)
 	if err == nil {
 		t.Errorf("licenses.GetLicenseByID() error = did not get an error")
 	} else {

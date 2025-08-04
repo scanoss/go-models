@@ -51,7 +51,7 @@ func NewModels(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryCon
 
 	models.Projects = NewProjectModel(ctx, s, q, db)
 	models.Versions = NewVersionModel(ctx, s, q, db)
-	models.Licenses = NewLicenseModel(ctx, s, q, db)
+	models.Licenses = NewLicenseModel(q, db)
 	models.Mines = NewMineModel(ctx, s, q)
 	models.AllUrls = NewAllURLModel(q)
 
