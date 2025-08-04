@@ -20,16 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
-	"go.uber.org/zap"
 )
 
 // AllUrlsModel provides database access for URL information.
 type AllUrlsModel struct {
-	ctx context.Context
-	s   *zap.SugaredLogger
-	q   *database.DBQueryContext
+	q *database.DBQueryContext
 }
 
 // AllURL represents a row on the AllURL table
@@ -46,22 +44,22 @@ type AllURL struct {
 }
 
 // NewAllURLModel creates a new instance of the AllUrlsModel.
-func NewAllURLModel(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext) *AllUrlsModel {
+func NewAllURLModel(q *database.DBQueryContext) *AllUrlsModel {
 	return &AllUrlsModel{
-		ctx: ctx,
-		s:   s,
-		q:   q,
+		q: q,
 	}
 }
 
 // GetURLsByPurlNameType retrieves all component URLs matching the specified PURL name and type.
-func (m *AllUrlsModel) GetURLsByPurlNameType(purlName, purlType string) ([]AllURL, error) {
+func (m *AllUrlsModel) GetURLsByPurlNameType(ctx context.Context, purlName, purlType string) ([]AllURL, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+
 	if len(purlName) == 0 {
-		m.s.Error("Please specify a valid Purl Name to query")
+		s.Error("Please specify a valid Purl Name to query")
 		return nil, errors.New("please specify a valid Purl Name to query")
 	}
 	if len(purlType) == 0 {
-		m.s.Errorf("Please specify a valid Purl Type to query: %v", purlName)
+		s.Errorf("Please specify a valid Purl Type to query: %v", purlName)
 		return nil, errors.New("please specify a valid Purl Type to query")
 	}
 
@@ -74,29 +72,30 @@ func (m *AllUrlsModel) GetURLsByPurlNameType(purlName, purlType string) ([]AllUR
 		" WHERE m.purl_type = $1 AND u.purl_name = $2 ORDER BY date DESC"
 
 	var allUrls []AllURL
-	err := m.q.SelectContext(m.ctx, &allUrls, query, purlType, purlName)
+	err := m.q.SelectContext(ctx, &allUrls, query, purlType, purlName)
 	if err != nil {
-		m.s.Errorf("Failed to query all urls table for %v - %v: %v", purlType, purlName, err)
+		s.Errorf("Failed to query all urls table for %v - %v: %v", purlType, purlName, err)
 		return nil, fmt.Errorf("failed to query the all urls table: %v", err)
 	}
 
-	m.s.Debugf("Found %v results for %v, %v.", len(allUrls), purlType, purlName)
+	s.Debugf("Found %v results for %v, %v.", len(allUrls), purlType, purlName)
 	return allUrls, nil
 }
 
 // GetURLsByPurlNameTypeVersion retrieves component URLs for a specific PURL name, type, and version.
 // Returns all matching results for the exact version.
-func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(purlName, purlType, purlVersion string) ([]AllURL, error) {
+func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlName, purlType, purlVersion string) ([]AllURL, error) {
+	s := ctxzap.Extract(ctx).Sugar()
 	if len(purlName) == 0 {
-		m.s.Error("Please specify a valid Purl Name to query")
+		s.Error("Please specify a valid Purl Name to query")
 		return nil, errors.New("please specify a valid Purl Name to query")
 	}
 	if len(purlType) == 0 {
-		m.s.Error("Please specify a valid Purl Type to query")
+		s.Error("Please specify a valid Purl Type to query")
 		return nil, errors.New("please specify a valid Purl Type to query")
 	}
 	if len(purlVersion) == 0 {
-		m.s.Error("Please specify a valid Purl Version to query")
+		s.Error("Please specify a valid Purl Version to query")
 		return nil, errors.New("please specify a valid Purl Version to query")
 	}
 
@@ -110,12 +109,12 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(purlName, purlType, purlVers
 		" WHERE m.purl_type = $1 AND u.purl_name = $2 AND v.version_name = $3 ORDER BY date DESC"
 
 	var allUrls []AllURL
-	err := m.q.SelectContext(m.ctx, &allUrls, query, purlType, purlName, purlVersion)
+	err := m.q.SelectContext(ctx, &allUrls, query, purlType, purlName, purlVersion)
 	if err != nil {
-		m.s.Errorf("Failed to query all urls table for %v - %v - %v: %v", purlType, purlName, purlVersion, err)
+		s.Errorf("Failed to query all urls table for %v - %v - %v: %v", purlType, purlName, purlVersion, err)
 		return nil, fmt.Errorf("failed to query the all urls table: %v", err)
 	}
 
-	m.s.Debugf("Found %v results for %v, %v, %v.", len(allUrls), purlType, purlName, purlVersion)
+	s.Debugf("Found %v results for %v, %v, %v.", len(allUrls), purlType, purlName, purlVersion)
 	return allUrls, nil
 }

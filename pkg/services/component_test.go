@@ -44,7 +44,7 @@ func TestNewComponentService(t *testing.T) {
 	q := database.NewDBSelectContext(s, db, nil, false)
 	modelsDB := models.NewModels(ctx, s, q, db)
 
-	service := NewComponentService(ctx, s, modelsDB)
+	service := NewComponentService(modelsDB)
 
 	if service == nil {
 		t.Fatal("NewComponentService returned nil")
@@ -66,14 +66,14 @@ func TestGetComponentEmptyPurl(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, nil, false)
 	modelsDB := models.NewModels(ctx, s, q, db)
-	service := NewComponentService(ctx, s, modelsDB)
+	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
 		Purl:        "",
 		Requirement: "",
 	}
 
-	_, err = service.GetComponent(req)
+	_, err = service.GetComponent(ctx, req)
 	if err == nil {
 		t.Error("GetComponent should return error for empty purl")
 	}
@@ -94,14 +94,14 @@ func TestGetComponentInvalidPurl(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, nil, false)
 	modelsDB := models.NewModels(ctx, s, q, db)
-	service := NewComponentService(ctx, s, modelsDB)
+	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
 		Purl:        "invalid-purl",
 		Requirement: "",
 	}
 
-	_, err = service.GetComponent(req)
+	_, err = service.GetComponent(ctx, req)
 	if err == nil {
 		t.Error("GetComponent should return error for invalid purl")
 	}
@@ -122,14 +122,14 @@ func TestGetComponentValidPurlButInvalidPurlName(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, nil, false)
 	modelsDB := models.NewModels(ctx, s, q, db)
-	service := NewComponentService(ctx, s, modelsDB)
+	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
 		Purl:        "pkg:npm/",
 		Requirement: "",
 	}
 
-	_, err = service.GetComponent(req)
+	_, err = service.GetComponent(ctx, req)
 	if err == nil {
 		t.Error("GetComponent should return error for purl with empty name")
 	}
@@ -150,7 +150,7 @@ func TestPickOneUrl(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, nil, false)
 	modelsDB := models.NewModels(ctx, s, q, db)
-	service := NewComponentService(ctx, s, modelsDB)
+	service := NewComponentService(modelsDB)
 
 	tests := []struct {
 		name          string
@@ -244,7 +244,7 @@ func TestPickOneUrl(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := service.pickOneUrl(tt.urls, tt.component, tt.purlType, tt.requirement)
+			result, err := service.pickOneUrl(ctx, tt.urls, tt.component, tt.purlType, tt.requirement)
 
 			if tt.shouldError && err == nil {
 				t.Error("expected error but got none")
@@ -281,7 +281,7 @@ func TestGetComponent(t *testing.T) {
 
 	q := database.NewDBSelectContext(s, db, nil, false)
 	modelsDB := models.NewModels(ctx, s, q, db)
-	service := NewComponentService(ctx, s, modelsDB)
+	service := NewComponentService(modelsDB)
 
 	tests := []struct {
 		name        string
@@ -399,7 +399,7 @@ func TestGetComponent(t *testing.T) {
 				Requirement: tt.requirement,
 			}
 
-			result, err := service.GetComponent(req)
+			result, err := service.GetComponent(ctx, req)
 
 			if tt.shouldError {
 				if err == nil {
