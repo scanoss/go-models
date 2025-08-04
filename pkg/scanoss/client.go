@@ -42,7 +42,7 @@ func New(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, 
 	m := models.NewModels(ctx, s, q, db)
 
 	//Initialize services
-	component := services.NewComponentService(ctx, s, m)
+	component := services.NewComponentService(m)
 
 	return &Client{
 		ctx:       ctx,
