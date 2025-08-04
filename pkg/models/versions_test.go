@@ -40,11 +40,11 @@ func TestVersionsSearch(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 	q := database.NewDBSelectContext(s, db, nil, false)
 
-	versionModel := NewVersionModel(ctx, s, q, db)
+	versionModel := NewVersionModel(q, db)
 
 	var name = "1.0.0"
 	fmt.Printf("Searching for version: %v\n", name)
-	version, err := versionModel.GetVersionByName(name)
+	version, err := versionModel.GetVersionByName(ctx, name)
 	if err != nil {
 		t.Errorf("versions.GetVersionByName() error = %v", err)
 	}
@@ -55,7 +55,7 @@ func TestVersionsSearch(t *testing.T) {
 
 	name = ""
 	fmt.Printf("Searching for version: %v\n", name)
-	_, err = versionModel.GetVersionByName(name)
+	_, err = versionModel.GetVersionByName(ctx, name)
 	if err == nil {
 		t.Errorf("versions.GetVersionByName() error = did not get an error")
 	} else {
@@ -64,7 +64,7 @@ func TestVersionsSearch(t *testing.T) {
 
 	name = "22.22.22"
 	fmt.Printf("Searching for version: %v\n", name)
-	version, err = versionModel.GetVersionByName(name)
+	version, err = versionModel.GetVersionByName(ctx, name)
 	if err != nil {
 		t.Errorf("versions.GetVersionByName() error = %v", err)
 	}
@@ -87,8 +87,8 @@ func TestVersionsSearchBadSql(t *testing.T) {
 	defer testutils.CloseDB(t, db)
 	q := database.NewDBSelectContext(s, db, nil, false)
 
-	versionModel := NewVersionModel(ctx, s, q, db)
-	_, err = versionModel.GetVersionByName("rubbish")
+	versionModel := NewVersionModel(q, db)
+	_, err = versionModel.GetVersionByName(ctx, "rubbish")
 	if err == nil {
 		t.Errorf("versions.GetVersionByName() error = did not get an error")
 	} else {
