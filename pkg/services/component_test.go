@@ -42,7 +42,7 @@ func TestNewComponentService(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(ctx, s, q, db)
+	modelsDB := models.NewModels(q, db)
 
 	service := NewComponentService(modelsDB)
 
@@ -65,7 +65,7 @@ func TestGetComponentEmptyPurl(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(ctx, s, q, db)
+	modelsDB := models.NewModels(q, db)
 	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
@@ -93,7 +93,7 @@ func TestGetComponentInvalidPurl(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(ctx, s, q, db)
+	modelsDB := models.NewModels(q, db)
 	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
@@ -121,7 +121,7 @@ func TestGetComponentValidPurlButInvalidPurlName(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(ctx, s, q, db)
+	modelsDB := models.NewModels(q, db)
 	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
@@ -149,7 +149,7 @@ func TestPickOneUrl(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(ctx, s, q, db)
+	modelsDB := models.NewModels(q, db)
 	service := NewComponentService(modelsDB)
 
 	tests := []struct {
@@ -280,7 +280,7 @@ func TestGetComponent(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
 	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(ctx, s, q, db)
+	modelsDB := models.NewModels(q, db)
 	service := NewComponentService(modelsDB)
 
 	tests := []struct {
