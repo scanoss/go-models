@@ -23,17 +23,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 
 	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 )
 
 type VersionModel struct {
-	ctx context.Context
-	s   *zap.SugaredLogger
-	q   *database.DBQueryContext
-	db  *sqlx.DB
+	q  *database.DBQueryContext
+	db *sqlx.DB
 }
 
 type Version struct {
@@ -43,23 +41,24 @@ type Version struct {
 }
 
 // NewVersionModel creates a new instance of the Version Model.
-func NewVersionModel(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *VersionModel {
-	return &VersionModel{ctx: ctx, s: s, q: q, db: db}
+func NewVersionModel(q *database.DBQueryContext, db *sqlx.DB) *VersionModel {
+	return &VersionModel{q: q, db: db}
 }
 
 // GetVersionByName gets the given version from the versions table.
-func (m *VersionModel) GetVersionByName(name string) (Version, error) {
+func (m *VersionModel) GetVersionByName(ctx context.Context, name string) (Version, error) {
+	s := ctxzap.Extract(ctx).Sugar()
 	if len(name) == 0 {
-		m.s.Error("Please specify a valid Version Name to query")
+		s.Error("Please specify a valid Version Name to query")
 		return Version{}, errors.New("please specify a valid Version Name to query")
 	}
 	var version Version
-	err := m.db.QueryRowxContext(m.ctx,
+	err := m.db.QueryRowxContext(ctx,
 		"SELECT id, version_name, semver FROM versions"+
 			" WHERE version_name = $1",
 		name).StructScan(&version)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		m.s.Errorf("Error: Failed to query versions table for %v: %v", name, err)
+		s.Errorf("Error: Failed to query versions table for %v: %v", name, err)
 		return Version{}, fmt.Errorf("failed to query the versions table: %v", err)
 	}
 
