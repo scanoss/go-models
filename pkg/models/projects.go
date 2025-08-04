@@ -22,16 +22,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
-	"go.uber.org/zap"
 )
 
 type ProjectModel struct {
-	ctx context.Context
-	s   *zap.SugaredLogger
-	q   *database.DBQueryContext
-	db  *sqlx.DB
+	q  *database.DBQueryContext
+	db *sqlx.DB
 }
 
 type Project struct {
@@ -46,22 +44,23 @@ type Project struct {
 }
 
 // NewProjectModel creates a new instance of the Project Model.
-func NewProjectModel(ctx context.Context, s *zap.SugaredLogger, q *database.DBQueryContext, db *sqlx.DB) *ProjectModel {
-	return &ProjectModel{ctx: ctx, s: s, q: q, db: db}
+func NewProjectModel(q *database.DBQueryContext, db *sqlx.DB) *ProjectModel {
+	return &ProjectModel{q: q, db: db}
 }
 
 // GetProjectsByPurlName searches the projects' table for details about Purl Name and Type.
-func (m *ProjectModel) GetProjectsByPurlName(purlName string, purlType string) ([]Project, error) {
+func (m *ProjectModel) GetProjectsByPurlName(ctx context.Context, purlName string, purlType string) ([]Project, error) {
+	s := ctxzap.Extract(ctx).Sugar()
 	if len(purlName) == 0 {
-		m.s.Error("Please specify a valid Purl Name to query")
+		s.Error("Please specify a valid Purl Name to query")
 		return nil, errors.New("please specify a valid Purl Name to query")
 	}
 	if len(purlType) == 0 {
-		m.s.Error("Please specify a valid Purl Type to query")
+		s.Error("Please specify a valid Purl Type to query")
 		return nil, errors.New("please specify a valid Purl Type to query")
 	}
 	var allProjects []Project
-	err := m.q.SelectContext(m.ctx, &allProjects,
+	err := m.q.SelectContext(ctx, &allProjects,
 		"SELECT purl_name, component,"+
 			" l.license_name AS   license, l.spdx_id AS   license_id, l.is_spdx AS   is_spdx,"+
 			" g.license_name AS g_license, g.spdx_id AS g_license_id, g.is_spdx AS g_is_spdx"+
@@ -72,23 +71,24 @@ func (m *ProjectModel) GetProjectsByPurlName(purlName string, purlType string) (
 			" WHERE m.purl_type = $1 AND p.purl_name = $2",
 		purlType, purlName)
 	if err != nil {
-		m.s.Errorf("Failed to query projects table for %v, %v: %v", purlName, purlType, err)
+		s.Errorf("Failed to query projects table for %v, %v: %v", purlName, purlType, err)
 		return nil, fmt.Errorf("failed to query the projects table: %v", err)
 	}
 	return allProjects, nil
 }
 
 // GetProjectByPurlName searches the projects' table for details about a Purl Name and Mine ID.
-func (m *ProjectModel) GetProjectByPurlName(purlName string, mineID int32) (Project, error) {
+func (m *ProjectModel) GetProjectByPurlName(ctx context.Context, purlName string, mineID int32) (Project, error) {
+	s := ctxzap.Extract(ctx).Sugar()
 	if len(purlName) == 0 {
-		m.s.Error("Please specify a valid Purl Name to query")
+		s.Error("Please specify a valid Purl Name to query")
 		return Project{}, errors.New("please specify a valid Purl Name to query")
 	}
 	if mineID < 0 {
-		m.s.Error("Please specify a valid Mine ID to query")
+		s.Error("Please specify a valid Mine ID to query")
 		return Project{}, errors.New("please specify a valid Mine ID to query")
 	}
-	rows, err := m.db.QueryxContext(m.ctx,
+	rows, err := m.db.QueryxContext(ctx,
 		"SELECT purl_name, component,"+
 			" l.license_name AS   license, l.spdx_id AS   license_id, l.is_spdx AS   is_spdx,"+
 			" g.license_name AS g_license, g.spdx_id AS g_license_id, g.is_spdx AS g_is_spdx"+
@@ -102,21 +102,21 @@ func (m *ProjectModel) GetProjectByPurlName(purlName string, mineID int32) (Proj
 		if rows != nil {
 			err := rows.Close()
 			if err != nil {
-				m.s.Warnf("Problem closing Rows: %v", err)
+				s.Warnf("Problem closing Rows: %v", err)
 			}
 		}
 	}()
 
 	if err != nil {
-		m.s.Errorf("Error: Failed to query projects table for %v, %v: %v", purlName, mineID, err)
+		s.Errorf("Error: Failed to query projects table for %v, %v: %v", purlName, mineID, err)
 		return Project{}, fmt.Errorf("failed to query the projects table: %v", err)
 	}
 	var project Project
 	if rows.Next() {
 		err = rows.StructScan(&project)
 		if err != nil {
-			m.s.Errorf("Failed to parse projects table results for %#v: %v", rows, err)
-			m.s.Errorf("Query failed for purl_name = %v, mine_id = %v", purlName, mineID)
+			s.Errorf("Failed to parse projects table results for %#v: %v", rows, err)
+			s.Errorf("Query failed for purl_name = %v, mine_id = %v", purlName, mineID)
 			return Project{}, fmt.Errorf("failed to query the projects table: %v", err)
 		}
 	}

@@ -40,11 +40,11 @@ func TestProjectsSearch(t *testing.T) {
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 	q := database.NewDBSelectContext(s, db, nil, false)
 
-	projectsModel := NewProjectModel(ctx, s, q, db)
+	projectsModel := NewProjectModel(q, db)
 	var purlName = "tablestyle"
 	var purlType = "gem"
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
-	projects, err := projectsModel.GetProjectsByPurlName(purlName, purlType)
+	projects, err := projectsModel.GetProjectsByPurlName(ctx, purlName, purlType)
 	if err != nil {
 		t.Errorf("projects.GetProjectsByPurlName() error = %v", err)
 	}
@@ -56,7 +56,7 @@ func TestProjectsSearch(t *testing.T) {
 	purlName = ""
 	purlType = "npm"
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
-	_, err = projectsModel.GetProjectsByPurlName(purlName, purlType)
+	_, err = projectsModel.GetProjectsByPurlName(ctx, purlName, purlType)
 	if err == nil {
 		t.Errorf("projects.GetProjectsByPurlName() error = did not get an error")
 	} else {
@@ -65,7 +65,7 @@ func TestProjectsSearch(t *testing.T) {
 	purlName = "tablestyle"
 	purlType = ""
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
-	_, err = projectsModel.GetProjectsByPurlName(purlName, purlType)
+	_, err = projectsModel.GetProjectsByPurlName(ctx, purlName, purlType)
 	if err == nil {
 		t.Errorf("projects.GetProjectsByPurlName() error = did not get an error")
 	} else {
@@ -74,7 +74,7 @@ func TestProjectsSearch(t *testing.T) {
 	purlName = "tablestyle"
 	var mineId int32 = 1
 	fmt.Printf("Searching for project: %v - %v\n", purlName, mineId)
-	project, err := projectsModel.GetProjectByPurlName("tablestyle", mineId)
+	project, err := projectsModel.GetProjectByPurlName(ctx, "tablestyle", mineId)
 	if err != nil {
 		t.Errorf("projects.GetProjectByPurlName() error = %+v", err)
 	}
@@ -86,7 +86,7 @@ func TestProjectsSearch(t *testing.T) {
 	purlName = ""
 	mineId = -1
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
-	_, err = projectsModel.GetProjectByPurlName(purlName, mineId)
+	_, err = projectsModel.GetProjectByPurlName(ctx, purlName, mineId)
 	if err == nil {
 		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
 	} else {
@@ -95,7 +95,7 @@ func TestProjectsSearch(t *testing.T) {
 	purlName = "NONEXISTENT"
 	mineId = -1
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
-	_, err = projectsModel.GetProjectByPurlName(purlName, mineId)
+	_, err = projectsModel.GetProjectByPurlName(ctx, purlName, mineId)
 	if err == nil {
 		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
 	} else {
@@ -115,15 +115,15 @@ func TestProjectsSearchBadSql(t *testing.T) {
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 	q := database.NewDBSelectContext(s, db, nil, false)
-	projectsModel := NewProjectModel(ctx, s, q, db)
+	projectsModel := NewProjectModel(q, db)
 
-	_, err = projectsModel.GetProjectsByPurlName("rubbish", "rubbish")
+	_, err = projectsModel.GetProjectsByPurlName(ctx, "rubbish", "rubbish")
 	if err == nil {
 		t.Errorf("projects.GetProjectsByPurlName() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
-	_, err = projectsModel.GetProjectByPurlName("rubbish", 2)
+	_, err = projectsModel.GetProjectByPurlName(ctx, "rubbish", 2)
 	if err == nil {
 		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
 	} else {
