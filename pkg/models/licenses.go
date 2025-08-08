@@ -37,7 +37,7 @@ type LicenseModel struct {
 type License struct {
 	ID          int32  `db:"id"`
 	LicenseName string `db:"license_name"`
-	LicenseID   string `db:"spdx_id"`
+	SPDX        string `db:"spdx_id"`
 	IsSpdx      bool   `db:"is_spdx"`
 }
 
