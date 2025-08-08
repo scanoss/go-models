@@ -24,13 +24,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
-
 	"github.com/jmoiron/sqlx"
 )
 
 type VersionModel struct {
-	q  *database.DBQueryContext
 	db *sqlx.DB
 }
 
@@ -41,8 +38,8 @@ type Version struct {
 }
 
 // NewVersionModel creates a new instance of the Version Model.
-func NewVersionModel(q *database.DBQueryContext, db *sqlx.DB) *VersionModel {
-	return &VersionModel{q: q, db: db}
+func NewVersionModel(db *sqlx.DB) *VersionModel {
+	return &VersionModel{db: db}
 }
 
 // GetVersionByName gets the given version from the versions table.

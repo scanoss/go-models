@@ -18,16 +18,11 @@ package models
 
 import (
 	"github.com/jmoiron/sqlx"
-
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 )
 
 // Models provides unified access to all SCANOSS data models.
 // It maintains database connections and provides access to individual model instances.
 type Models struct {
-	q  *database.DBQueryContext
-	db *sqlx.DB
-
 	AllUrls  *AllUrlsModel
 	Projects *ProjectModel
 	Versions *VersionModel
@@ -37,17 +32,14 @@ type Models struct {
 
 // NewModels creates a new instance of the unified SCANOSS models database wrapper.
 // It initializes all individual models and sets up their dependencies.
-func NewModels(q *database.DBQueryContext, db *sqlx.DB) *Models {
+func NewModels(db *sqlx.DB) *Models {
 	models := &Models{
-		q:  q,
-		db: db,
+		AllUrls:  NewAllURLModel(db),
+		Projects: NewProjectModel(db),
+		Versions: NewVersionModel(db),
+		Licenses: NewLicenseModel(db),
+		Mines:    NewMineModel(db),
 	}
-
-	models.Projects = NewProjectModel(q, db)
-	models.Versions = NewVersionModel(q, db)
-	models.Licenses = NewLicenseModel(q, db)
-	models.Mines = NewMineModel(q)
-	models.AllUrls = NewAllURLModel(q)
 
 	return models
 }

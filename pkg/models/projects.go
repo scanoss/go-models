@@ -24,11 +24,9 @@ import (
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 )
 
 type ProjectModel struct {
-	q  *database.DBQueryContext
 	db *sqlx.DB
 }
 
@@ -44,8 +42,8 @@ type Project struct {
 }
 
 // NewProjectModel creates a new instance of the Project Model.
-func NewProjectModel(q *database.DBQueryContext, db *sqlx.DB) *ProjectModel {
-	return &ProjectModel{q: q, db: db}
+func NewProjectModel(db *sqlx.DB) *ProjectModel {
+	return &ProjectModel{db: db}
 }
 
 // GetProjectsByPurlName searches the projects' table for details about Purl Name and Type.
@@ -60,7 +58,7 @@ func (m *ProjectModel) GetProjectsByPurlName(ctx context.Context, purlName strin
 		return nil, errors.New("please specify a valid Purl Type to query")
 	}
 	var allProjects []Project
-	err := m.q.SelectContext(ctx, &allProjects,
+	err := m.db.SelectContext(ctx, &allProjects,
 		"SELECT purl_name, component,"+
 			" l.license_name AS   license, l.spdx_id AS   license_id, l.is_spdx AS   is_spdx,"+
 			" g.license_name AS g_license, g.spdx_id AS g_license_id, g.is_spdx AS g_is_spdx"+

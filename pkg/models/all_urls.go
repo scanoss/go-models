@@ -21,13 +21,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
+	"github.com/jmoiron/sqlx"
 )
 
 // AllUrlsModel provides database access for URL information.
 type AllUrlsModel struct {
-	q *database.DBQueryContext
+	db *sqlx.DB
 }
 
 // AllURL represents a row on the AllURL table
@@ -44,9 +43,9 @@ type AllURL struct {
 }
 
 // NewAllURLModel creates a new instance of the AllUrlsModel.
-func NewAllURLModel(q *database.DBQueryContext) *AllUrlsModel {
+func NewAllURLModel(db *sqlx.DB) *AllUrlsModel {
 	return &AllUrlsModel{
-		q: q,
+		db: db,
 	}
 }
 
@@ -72,7 +71,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameType(ctx context.Context, purlName, purl
 		" WHERE m.purl_type = $1 AND u.purl_name = $2 ORDER BY date DESC"
 
 	var allUrls []AllURL
-	err := m.q.SelectContext(ctx, &allUrls, query, purlType, purlName)
+	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName)
 	if err != nil {
 		s.Errorf("Failed to query all urls table for %v - %v: %v", purlType, purlName, err)
 		return nil, fmt.Errorf("failed to query the all urls table: %v", err)
@@ -109,7 +108,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 		" WHERE m.purl_type = $1 AND u.purl_name = $2 AND v.version_name = $3 ORDER BY date DESC"
 
 	var allUrls []AllURL
-	err := m.q.SelectContext(ctx, &allUrls, query, purlType, purlName, purlVersion)
+	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName, purlVersion)
 	if err != nil {
 		s.Errorf("Failed to query all urls table for %v - %v - %v: %v", purlType, purlName, purlVersion, err)
 		return nil, fmt.Errorf("failed to query the all urls table: %v", err)

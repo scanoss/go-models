@@ -19,7 +19,6 @@ package models
 import (
 	"context"
 	"fmt"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"reflect"
 	"testing"
 
@@ -35,14 +34,11 @@ func TestLicensesSearch(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-
-	licenseModel := NewLicenseModel(q, db)
+	licenseModel := NewLicenseModel(db)
 
 	var name = "MIT"
 	fmt.Printf("Searching for license: %v\n", name)
@@ -84,15 +80,12 @@ func TestLicensesSearchId(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-
-	licenseModel := NewLicenseModel(q, db)
+	licenseModel := NewLicenseModel(db)
 
 	name := "MIT"
 	fmt.Printf("Searching for license: %v\n", name)

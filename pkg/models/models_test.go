@@ -17,11 +17,8 @@
 package models
 
 import (
-	"context"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"github.com/scanoss/go-models/internal/testutils"
 	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 )
@@ -32,15 +29,12 @@ func TestNewDB(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
 	}
 	defer zlog.SyncZap()
-	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-	models := NewModels(q, db)
+	models := NewModels(db)
 
 	if models.AllUrls == nil {
 		t.Error("NewModels did not initialize AllUrls model")

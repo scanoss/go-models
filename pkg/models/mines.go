@@ -23,11 +23,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
+	"github.com/jmoiron/sqlx"
 )
 
 type MineModel struct {
-	q *database.DBQueryContext
+	db *sqlx.DB
 }
 
 type Mine struct {
@@ -37,8 +37,8 @@ type Mine struct {
 }
 
 // NewMineModel creates a new instance of the 'Mine' Model.
-func NewMineModel(q *database.DBQueryContext) *MineModel {
-	return &MineModel{q: q}
+func NewMineModel(db *sqlx.DB) *MineModel {
+	return &MineModel{db: db}
 }
 
 // GetMineIdsByPurlType retrieves a list of the Purl Type IDs associated with the given Purl Type (string).
@@ -49,7 +49,7 @@ func (m *MineModel) GetMineIdsByPurlType(ctx context.Context, purlType string) (
 		return nil, errors.New("please specify a Purl Type to query")
 	}
 	var mines []Mine
-	err := m.q.SelectContext(ctx, &mines,
+	err := m.db.SelectContext(ctx, &mines,
 		"SELECT id,mine_name,purl_type FROM mines WHERE purl_type = $1", purlType,
 	)
 	if err != nil {

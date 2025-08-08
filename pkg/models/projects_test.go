@@ -19,7 +19,6 @@ package models
 import (
 	"context"
 	"fmt"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
@@ -34,13 +33,11 @@ func TestProjectsSearch(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
-	q := database.NewDBSelectContext(s, db, nil, false)
 
-	projectsModel := NewProjectModel(q, db)
+	projectsModel := NewProjectModel(db)
 	var purlName = "tablestyle"
 	var purlType = "gem"
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
@@ -111,11 +108,9 @@ func TestProjectsSearchBadSql(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
-	q := database.NewDBSelectContext(s, db, nil, false)
-	projectsModel := NewProjectModel(q, db)
+	projectsModel := NewProjectModel(db)
 
 	_, err = projectsModel.GetProjectsByPurlName(ctx, "rubbish", "rubbish")
 	if err == nil {

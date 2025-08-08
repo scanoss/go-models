@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"regexp"
 	"strings"
 
@@ -32,7 +31,6 @@ import (
 )
 
 type LicenseModel struct {
-	q  *database.DBQueryContext
 	db *sqlx.DB
 }
 
@@ -48,8 +46,8 @@ var bannedLicSuffixes = []string{".md", ".txt", ".html"}                        
 var whiteSpaceRegex = regexp.MustCompile(`\s+`)                                                             // generic whitespace regex
 
 // NewLicenseModel create a new instance of the License Model.
-func NewLicenseModel(q *database.DBQueryContext, db *sqlx.DB) *LicenseModel {
-	return &LicenseModel{q: q, db: db}
+func NewLicenseModel(db *sqlx.DB) *LicenseModel {
+	return &LicenseModel{db: db}
 }
 
 // GetLicenseByID retrieves license data by the given row ID.

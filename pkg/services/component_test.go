@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"github.com/scanoss/go-models/internal/testutils"
 	"github.com/scanoss/go-models/pkg/models"
 	"github.com/scanoss/go-models/pkg/types"
@@ -34,15 +33,12 @@ func TestNewComponentService(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
 	}
 	defer zlog.SyncZap()
-	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(q, db)
+	modelsDB := models.NewModels(db)
 
 	service := NewComponentService(modelsDB)
 
@@ -58,14 +54,12 @@ func TestGetComponentEmptyPurl(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(q, db)
+	modelsDB := models.NewModels(db)
 	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
@@ -86,14 +80,12 @@ func TestGetComponentInvalidPurl(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(q, db)
+	modelsDB := models.NewModels(db)
 	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
@@ -114,14 +106,12 @@ func TestGetComponentValidPurlButInvalidPurlName(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(q, db)
+	modelsDB := models.NewModels(db)
 	service := NewComponentService(modelsDB)
 
 	req := types.ComponentRequest{
@@ -142,14 +132,12 @@ func TestPickOneUrl(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t)
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(q, db)
+	modelsDB := models.NewModels(db)
 	service := NewComponentService(modelsDB)
 
 	tests := []struct {
@@ -273,14 +261,12 @@ func TestGetComponent(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t)
 	defer testutils.CloseDB(t, db)
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, nil, false)
-	modelsDB := models.NewModels(q, db)
+	modelsDB := models.NewModels(db)
 	service := NewComponentService(modelsDB)
 
 	tests := []struct {

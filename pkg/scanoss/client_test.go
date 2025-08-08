@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	"github.com/scanoss/go-models/internal/testutils"
 	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 )
@@ -33,16 +32,13 @@ func TestNew(t *testing.T) {
 	}
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
 	conn := testutils.SqliteConn(t, ctx, db) // Get a connection from the pool
 	defer testutils.CloseConn(t, conn)
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	q := database.NewDBSelectContext(s, db, conn, false)
-
-	client := New(q, db)
+	client := New(db)
 
 	if client.Models == nil {
 		t.Error("New did not initialize Models")
