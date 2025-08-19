@@ -188,3 +188,52 @@ func TestCleanseLicenseName(t *testing.T) {
 		})
 	}
 }
+
+func TestSeeAlsoArray_Scan(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   interface{}
+		want    SeeAlsoArray
+		wantErr bool
+	}{
+		{
+			name:  "PostgreSQL array format",
+			input: "{https://opensource.org/license/mit/,http://opensource.org/licenses/MIT}",
+			want:  SeeAlsoArray{"https://opensource.org/license/mit/", "http://opensource.org/licenses/MIT"},
+		},
+		{
+			name:  "JSON format",
+			input: `["https://opensource.org/license/mit/","http://opensource.org/licenses/MIT"]`,
+			want:  SeeAlsoArray{"https://opensource.org/license/mit/", "http://opensource.org/licenses/MIT"},
+		},
+		{
+			name:  "Empty PostgreSQL array",
+			input: "{}",
+			want:  SeeAlsoArray{},
+		},
+		{
+			name:  "Empty string",
+			input: "",
+			want:  SeeAlsoArray{},
+		},
+		{
+			name:  "Null value",
+			input: nil,
+			want:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var s SeeAlsoArray
+			err := s.Scan(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SeeAlsoArray.Scan() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(s, tt.want) {
+				t.Errorf("SeeAlsoArray.Scan() = %v, want %v", s, tt.want)
+			}
+		})
+	}
+}
