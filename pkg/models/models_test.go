@@ -55,4 +55,8 @@ func TestNewDB(t *testing.T) {
 	if models.Mines == nil {
 		t.Error("NewModels did not initialize Mines model")
 	}
+
+	if models.DBVersion == nil {
+		t.Error("NewModels did not initialize DBVersion model")
+	}
 }
