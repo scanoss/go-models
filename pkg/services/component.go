@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/scanoss/go-models/pkg/models"
@@ -61,6 +63,15 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 	}
 
 	purlReq := req.Requirement
+
+	// If requirement is a fixed version (no range operators), return directly
+	// Covers operators from: npm (^~<>=*|), pip (~=!<>=), maven/nuget ([](),), cargo, composer, gems
+	if len(purlReq) > 0 && !strings.ContainsAny(purlReq, "<>=^~*|[](),!") {
+		return types.ComponentResponse{
+			Purl:    req.Purl,
+			Version: purlReq,
+		}, nil
+	}
 
 	// Extract an exact version from requirement if no version in PURL
 	if len(purl.Version) == 0 && len(purlReq) > 0 {
