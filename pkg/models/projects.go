@@ -120,3 +120,29 @@ func (m *ProjectModel) GetProjectByPurlName(ctx context.Context, purlName string
 	}
 	return project, nil
 }
+
+// CheckPurlByNameType checks the projects table for the count of entries matching a Purl Name and Type.
+func (m *ProjectModel) CheckPurlByNameType(ctx context.Context, purlName string, purlType string) (int, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+	if len(purlName) == 0 {
+		s.Error("Please specify a valid Purl Name to query")
+		return -1, errors.New("please specify a valid Purl Name to query")
+	}
+	if len(purlType) == 0 {
+		s.Error("Please specify a valid Purl Type to query")
+		return -1, errors.New("please specify a valid Purl Type to query")
+	}
+	var count int
+	err := m.db.QueryRowxContext(ctx,
+		"SELECT count(*)"+
+			" FROM projects p"+
+			" INNER JOIN mines m ON p.mine_id = m.id"+
+			" WHERE p.purl_name = $1 AND m.purl_type = $2",
+		purlName, purlType).Scan(&count)
+	if err != nil {
+		s.Errorf("Error: Failed to query projects table for %v, %v: %v", purlName, purlType, err)
+		return -1, fmt.Errorf("failed to query the projects table: %v", err)
+	}
+	return count, nil
+}
+

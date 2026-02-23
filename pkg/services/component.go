@@ -43,6 +43,24 @@ func NewComponentService(models *models.Models) *ComponentService {
 	}
 }
 
+func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (count int, err error)  {
+	if len(p) == 0 {
+		return -1, errors.New("please specify a valid purl to query")
+	}
+
+	purl, err := purlutils.PurlFromString(p)
+	if err != nil {
+		return -1, fmt.Errorf("failed to parse purl: %w", err)
+	}
+
+	purlName, err := purlutils.PurlNameFromString(p) //Make sure we just have the bare minimum for a Purl Name
+	if err != nil {
+		return -1, fmt.Errorf("failed to extract purl name: %w", err)
+	}
+
+	return cs.models.Projects.CheckPurlByNameType(ctx, purlName, purl.Type)
+}
+
 // GetComponent retrieves component information based on PURL and requirements.
 func (cs *ComponentService) GetComponent(ctx context.Context, req types.ComponentRequest) (types.ComponentResponse, error) {
 	// TODO: Simplify component selection logic.
@@ -63,6 +81,9 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 	}
 
 	purlReq := req.Requirement
+	if len(purlReq) > 0 && len(purl.Version) > 0 {
+		return types.ComponentResponse{}, errors.New("cannot specify both a version and a requirement")
+	}
 
 	// If requirement is a fixed version (no range operators), return directly
 	// Covers operators from: npm (^~<>=*|), pip (~=!<>=), maven/nuget ([](),), cargo, composer, gems
