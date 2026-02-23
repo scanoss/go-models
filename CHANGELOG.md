@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming changes...
 
+## [0.5.0] - 2026-02-24
+### Added
+- `CheckPurlByNameType` method in `ProjectModel` to check the projects table for entries matching a PURL name and type
+- `CheckPurl` method in `ComponentService` to validate and check a PURL string existence
+
 ## [0.4.0] - 2026-01-30
 ### Added
 - Added `DBVersionModel` to query the `db_version` table for schema version, package name, release, and creation date
@@ -45,3 +50,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/scanoss/go-models/compare/v0.1.1...v0.2.0
 [0.3.0]: https://github.com/scanoss/go-models/compare/v0.2.0...v0.3.0
 [0.4.0]: https://github.com/scanoss/go-models/compare/v0.3.0...v0.4.0
+[0.5.0]: https://github.com/scanoss/go-models/compare/v0.4.0...v0.5.0

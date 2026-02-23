@@ -3,7 +3,6 @@ module github.com/scanoss/go-models
 go 1.24
 
 toolchain go1.24.4
-
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
