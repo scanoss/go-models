@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
@@ -43,7 +42,7 @@ func NewComponentService(models *models.Models) *ComponentService {
 	}
 }
 
-func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (count int, err error)  {
+func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (count int, err error) {
 	if len(p) == 0 {
 		return -1, errors.New("please specify a valid purl to query")
 	}
@@ -83,15 +82,6 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 	purlReq := req.Requirement
 	if len(purlReq) > 0 && len(purl.Version) > 0 {
 		return types.ComponentResponse{}, errors.New("cannot specify both a version and a requirement")
-	}
-
-	// If requirement is a fixed version (no range operators), return directly
-	// Covers operators from: npm (^~<>=*|), pip (~=!<>=), maven/nuget ([](),), cargo, composer, gems
-	if len(purlReq) > 0 && !strings.ContainsAny(purlReq, "<>=^~*|[](),!") {
-		return types.ComponentResponse{
-			Purl:    req.Purl,
-			Version: purlReq,
-		}, nil
 	}
 
 	// Extract an exact version from requirement if no version in PURL
