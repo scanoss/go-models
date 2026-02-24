@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming changes...
 
+## [0.5.1] - 2026-02-24
+### Changed
+- Removed operator check from `GetComponent`
+
 ## [0.5.0] - 2026-02-24
 ### Added
 - `CheckPurlByNameType` method in `ProjectModel` to check the projects table for entries matching a PURL name and type
@@ -51,3 +55,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.3.0]: https://github.com/scanoss/go-models/compare/v0.2.0...v0.3.0
 [0.4.0]: https://github.com/scanoss/go-models/compare/v0.3.0...v0.4.0
 [0.5.0]: https://github.com/scanoss/go-models/compare/v0.4.0...v0.5.0
+[0.5.1]: https://github.com/scanoss/go-models/compare/v0.5.0...v0.5.1
