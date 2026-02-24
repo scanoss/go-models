@@ -6,8 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added
-- Upcoming changes...
+
+## [0.5.1] - 2026-02-24
+### Changed
+- Removed operator check from `GetComponent`
+- Optimized `pickOneUrl` in `ComponentService`: replaced `map[*semver.Version]` + `sort` with single-pass max tracking using `GreaterThan`, reducing complexity from O(n log n) to O(n)
+- Fixed broken deduplication in `pickOneUrl` caused by using pointer keys in map
+- Pre-parsed `v0.0.0` fallback version once instead of on every parse failure
 
 ## [0.5.1] - 2026-02-24
 ### Changed
