@@ -26,7 +26,6 @@ import (
 	"github.com/scanoss/go-models/pkg/models"
 	"github.com/scanoss/go-models/pkg/types"
 	purlutils "github.com/scanoss/go-purl-helper/pkg"
-	"sort"
 )
 
 // ComponentService orchestrates component lookup logic using extracted business logic.
@@ -129,7 +128,6 @@ func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.All
 	}
 
 	var c *semver.Constraints
-	var urlMap = make(map[*semver.Version]models.AllURL)
 	if len(purlReq) > 0 {
 		s.Debugf("Building version constraint for %v: %v", purlName, purlReq)
 		var err error
@@ -138,51 +136,45 @@ func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.All
 			s.Warnf("Encountered an issue parsing version constraint string '%v' (%v,%v): %v", purlReq, purlName, purlType, err)
 		}
 	}
+
+	zeroVersion, _ := semver.NewVersion("v0.0.0")
+	var bestVersion *semver.Version
+	var bestURL models.AllURL
+
 	s.Debugf("Checking versions...")
 	for _, url := range allUrls {
-		if len(url.SemVer) > 0 || len(url.Version) > 0 {
-			v, err := semver.NewVersion(url.Version)
-			if err != nil && len(url.SemVer) > 0 {
-				s.Debugf("Failed to parse SemVer: '%v'. Trying Version instead: %v (%v)", url.Version, url.SemVer, err)
-				v, err = semver.NewVersion(url.SemVer) // Semver failed, try the normal version
-			}
-			if err != nil {
-				s.Warnf("Encountered an issue parsing version string '%v' (%v) for %v: %v. Using v0.0.0", url.Version, url.SemVer, url, err)
-				v, err = semver.NewVersion("v0.0.0") // Semver failed, just use a standard version zero (for now)
-			}
-			if err == nil {
-				if c == nil || c.Check(v) {
-					_, ok := urlMap[v]
-					if !ok {
-						urlMap[v] = url // fits inside the constraint and hasn't already been stored
-					}
-				}
-			}
-		} else {
+		if len(url.SemVer) == 0 && len(url.Version) == 0 {
 			s.Infof("Skipping match as it doesn't have a version: %#v", url)
+			continue
+		}
+
+		v, err := semver.NewVersion(url.Version)
+		if err != nil && len(url.SemVer) > 0 {
+			s.Debugf("Failed to parse SemVer: '%v'. Trying Version instead: %v (%v)", url.Version, url.SemVer, err)
+			v, err = semver.NewVersion(url.SemVer)
+		}
+		if err != nil {
+			s.Warnf("Encountered an issue parsing version string '%v' (%v) for %v: %v. Using v0.0.0", url.Version, url.SemVer, url, err)
+			v = zeroVersion
+		}
+
+		if c != nil && !c.Check(v) {
+			continue
+		}
+
+		if bestVersion == nil || v.GreaterThan(bestVersion) {
+			bestVersion = v
+			bestURL = url
 		}
 	}
-	if len(urlMap) == 0 { // TODO should we return the latest version anyway?
+
+	if bestVersion == nil { // TODO should we return the latest version anyway?
 		s.Warnf("No component match found for %v, %v after filter %v", purlName, purlType, purlReq)
 		return models.AllURL{}, nil
 	}
-	var versions = make([]*semver.Version, len(urlMap))
-	var vi = 0
-	for version := range urlMap { // Save the list of versions so they can be sorted
-		versions[vi] = version
-		vi++
-	}
-	sort.Sort(semver.Collection(versions))
-	version := versions[len(versions)-1] // Get the latest (acceptable) URL version
-	s.Debugf("Sorted versions: %v. Highest: %v", versions, version)
 
-	url, ok := urlMap[version] // Retrieve the latest accepted URL version
-	if !ok {
-		s.Errorf("Problem retrieving URL data for %v (%v, %v)", version, purlName, purlType)
-		return models.AllURL{}, fmt.Errorf("failed to retrieve specific URL version: %v", version)
-	}
-	url.URL, _ = purlutils.ProjectUrl(purlName, purlType)
-
-	s.Debugf("Selected version: %#v", url)
-	return url, nil // Return the best component match
+	s.Debugf("Selected highest version: %v", bestVersion)
+	bestURL.URL, _ = purlutils.ProjectUrl(purlName, purlType)
+	s.Debugf("Selected version: %#v", bestURL)
+	return bestURL, nil
 }
