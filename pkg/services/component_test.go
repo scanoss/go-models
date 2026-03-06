@@ -232,13 +232,13 @@ func TestPickOneUrl(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := service.pickOneUrl(ctx, tt.urls, tt.component, tt.purlType, tt.requirement)
+			result, pickErr := service.pickOneUrl(ctx, tt.urls, tt.component, tt.purlType, tt.requirement)
 
-			if tt.shouldError && err == nil {
+			if tt.shouldError && pickErr == nil {
 				t.Error("expected error but got none")
 			}
-			if !tt.shouldError && err != nil {
-				t.Errorf("unexpected error: %v", err)
+			if !tt.shouldError && pickErr != nil {
+				t.Errorf("unexpected error: %v", pickErr)
 			}
 
 			if tt.expectedEmpty {
@@ -385,16 +385,16 @@ func TestGetComponent(t *testing.T) {
 				Requirement: tt.requirement,
 			}
 
-			result, err := service.GetComponent(ctx, req)
+			result, getErr := service.GetComponent(ctx, req)
 
 			if tt.shouldError {
-				if err == nil {
+				if getErr == nil {
 					t.Error("expected error but got none")
 					return
 				}
 			} else {
-				if err != nil {
-					t.Errorf("unexpected error: %v", err)
+				if getErr != nil {
+					t.Errorf("unexpected error: %v", getErr)
 					return
 				}
 				if result.Version != tt.expectedVer {

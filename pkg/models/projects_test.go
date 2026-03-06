@@ -100,7 +100,7 @@ func TestProjectsSearch(t *testing.T) {
 	}
 }
 
-// TestProjectsSearchBadSql test queries without creating/loading the project table
+// TestProjectsSearchBadSql test queries without creating/loading the project table.
 func TestProjectsSearchBadSql(t *testing.T) {
 	err := zlog.NewSugaredDevLogger()
 	if err != nil {

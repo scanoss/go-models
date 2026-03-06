@@ -19,7 +19,6 @@ package helpers
 import "testing"
 
 func TestSemverTogglePrefix(t *testing.T) {
-
 	tests := []struct {
 		input    string
 		expected string
@@ -64,5 +63,4 @@ func TestSemverTogglePrefix(t *testing.T) {
 			t.Errorf("SemverTogglePrefix() = %v, want %v", got, tt.expected)
 		}
 	}
-
 }

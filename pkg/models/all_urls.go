@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
 	"github.com/scanoss/go-models/pkg/helpers"
@@ -30,7 +31,7 @@ type AllUrlsModel struct {
 	db *sqlx.DB
 }
 
-// AllURL represents a row on the AllURL table
+// AllURL represents a row on the AllURL table.
 type AllURL struct {
 	Component string `db:"component"`
 	Version   string `db:"version"`
@@ -100,7 +101,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 	}
 	semverV := helpers.SemverTogglePrefix(purlVersion)
 
-	//This query is same as GetURLsByPurlNameType but adds a WHERE clause for versions
+	// This query is same as GetURLsByPurlNameType but adds a WHERE clause for versions
 	query := "SELECT component, v.version_name AS version, v.semver AS semver," +
 		" l.license_name AS license, l.is_spdx AS is_spdx, u.license_id," +
 		" purl_name, mine_id FROM all_urls u" +

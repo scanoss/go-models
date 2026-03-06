@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
 )
@@ -98,9 +99,9 @@ func (m *ProjectModel) GetProjectByPurlName(ctx context.Context, purlName string
 
 	defer func() {
 		if rows != nil {
-			err := rows.Close()
-			if err != nil {
-				s.Warnf("Problem closing Rows: %v", err)
+			closeErr := rows.Close()
+			if closeErr != nil {
+				s.Warnf("Problem closing Rows: %v", closeErr)
 			}
 		}
 	}()
@@ -145,4 +146,3 @@ func (m *ProjectModel) CheckPurlByNameType(ctx context.Context, purlName string,
 	}
 	return count, nil
 }
-

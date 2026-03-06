@@ -66,7 +66,7 @@ func (m *DBVersionModel) GetCurrentVersion(ctx context.Context) (DBVersion, erro
 		}
 		return DBVersion{}, fmt.Errorf("failed to query db_version table: %w", err)
 	}
-	if t, err := time.Parse(time.RFC3339, dbVersion.CreatedAt); err == nil {
+	if t, parseErr := time.Parse(time.RFC3339, dbVersion.CreatedAt); parseErr == nil {
 		dbVersion.CreatedAt = t.Format(time.DateOnly)
 	}
 	return dbVersion, nil
