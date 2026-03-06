@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
+	"github.com/scanoss/go-models/pkg/helpers"
 )
 
 // AllUrlsModel provides database access for URL information.
@@ -97,6 +98,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 		s.Error("Please specify a valid Purl Version to query")
 		return nil, errors.New("please specify a valid Purl Version to query")
 	}
+	semverV := helpers.SemverTogglePrefix(purlVersion)
 
 	//This query is same as GetURLsByPurlNameType but adds a WHERE clause for versions
 	query := "SELECT component, v.version_name AS version, v.semver AS semver," +
@@ -105,10 +107,10 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 		" LEFT JOIN mines m ON u.mine_id = m.id" +
 		" LEFT JOIN licenses l ON u.license_id = l.id" +
 		" LEFT JOIN versions v ON u.version_id = v.id" +
-		" WHERE m.purl_type = $1 AND u.purl_name = $2 AND v.version_name = $3 ORDER BY date DESC"
+		" WHERE m.purl_type = $1 AND u.purl_name = $2 AND (v.version_name = $3  OR v.version_name = $4) ORDER BY date DESC"
 
 	var allUrls []AllURL
-	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName, purlVersion)
+	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName, purlVersion, semverV)
 	if err != nil {
 		s.Errorf("Failed to query all urls table for %v - %v - %v: %v", purlType, purlName, purlVersion, err)
 		return nil, fmt.Errorf("failed to query the all urls table: %v", err)
