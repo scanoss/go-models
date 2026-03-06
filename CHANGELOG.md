@@ -10,9 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2026-03-09
 ### Changed
 - Improved version query in `GetURLsByPurlNameTypeVersion` to cover semver "v" prefix variants using new `SemverTogglePrefix` helper
+- Upgraded `scanoss/zap-logging-helper` to v0.4.0
+- Upgraded `modernc.org/sqlite` to v1.46.1
 ### Added
 - Added `Makefile`
 - Added linter
+
 
 ## [0.5.1] - 2026-02-24
 ### Changed
