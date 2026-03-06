@@ -18,15 +18,12 @@ package scanoss
 
 import (
 	"github.com/jmoiron/sqlx"
-
 	"github.com/scanoss/go-models/pkg/models"
 	"github.com/scanoss/go-models/pkg/services"
 )
 
 // Client provides a unified interface to SCANOSS data models and services.
 type Client struct {
-	db *sqlx.DB
-
 	Models    *models.Models
 	Component *services.ComponentService
 }
@@ -35,7 +32,7 @@ type Client struct {
 func New(db *sqlx.DB) *Client {
 	m := models.NewModels(db)
 
-	//Initialize services
+	// Initialize services
 	component := services.NewComponentService(m)
 
 	return &Client{

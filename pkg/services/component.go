@@ -41,7 +41,7 @@ func NewComponentService(models *models.Models) *ComponentService {
 	}
 }
 
-func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (count int, err error) {
+func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (int, error) {
 	if len(p) == 0 {
 		return -1, errors.New("please specify a valid purl to query")
 	}
@@ -51,7 +51,7 @@ func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (count int,
 		return -1, fmt.Errorf("failed to parse purl: %w", err)
 	}
 
-	purlName, err := purlutils.PurlNameFromString(p) //Make sure we just have the bare minimum for a Purl Name
+	purlName, err := purlutils.PurlNameFromString(p) // Make sure we just have the bare minimum for a Purl Name
 	if err != nil {
 		return -1, fmt.Errorf("failed to extract purl name: %w", err)
 	}
@@ -73,7 +73,7 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 		return types.ComponentResponse{}, fmt.Errorf("failed to parse purl: %w", err)
 	}
 
-	purlName, err := purlutils.PurlNameFromString(req.Purl) //Make sure we just have the bare minimum for a Purl Name
+	purlName, err := purlutils.PurlNameFromString(req.Purl) // Make sure we just have the bare minimum for a Purl Name
 	if err != nil {
 		return types.ComponentResponse{}, fmt.Errorf("failed to extract purl name: %w", err)
 	}
@@ -119,6 +119,8 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 }
 
 // pickOneUrl takes the potential matching component/versions and selects the most appropriate one.
+//
+//nolint:unparam // error kept for future use
 func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.AllURL, purlName, purlType, purlReq string) (models.AllURL, error) {
 	s := ctxzap.Extract(ctx).Sugar()
 

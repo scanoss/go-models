@@ -71,7 +71,7 @@ func TestVersionsSearch(t *testing.T) {
 	fmt.Printf("Version: %#v\n", version)
 }
 
-// TestVersionsSearchBadSql test queries without creating/loading the versions table
+// TestVersionsSearchBadSql test queries without creating/loading the versions table.
 func TestVersionsSearchBadSql(t *testing.T) {
 	err := zlog.NewSugaredDevLogger()
 	if err != nil {
