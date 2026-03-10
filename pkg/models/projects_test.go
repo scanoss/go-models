@@ -109,7 +109,7 @@ func TestProjectsSearchBadSql(t *testing.T) {
 	defer zlog.SyncZap()
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
-	defer testutils.CloseDB(t, db)
+	_, _ = db.Exec("DROP TABLE IF EXISTS projects")
 	projectsModel := NewProjectModel(db)
 
 	_, err = projectsModel.GetProjectsByPurlName(ctx, "rubbish", "rubbish")

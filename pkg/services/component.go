@@ -20,13 +20,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/scanoss/go-models/pkg/models"
 	"github.com/scanoss/go-models/pkg/types"
 	purlutils "github.com/scanoss/go-purl-helper/pkg"
 )
+
+var errGolangNotResolved = errors.New("golang component not fully resolved")
 
 // ComponentService orchestrates component lookup logic using extracted business logic.
 type ComponentService struct {
@@ -54,6 +56,10 @@ func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (int, error
 	purlName, err := purlutils.PurlNameFromString(p) // Make sure we just have the bare minimum for a Purl Name
 	if err != nil {
 		return -1, fmt.Errorf("failed to extract purl name: %w", err)
+	}
+
+	if purl.Type == "golang" {
+		return cs.models.GolangProjects.CheckPurlByNameType(ctx, purlName, purl.Type)
 	}
 
 	return cs.models.Projects.CheckPurlByNameType(ctx, purlName, purl.Type)
@@ -91,7 +97,25 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 			purlReq = ""
 		}
 	}
-
+	if purl.Type == "golang" {
+		resolved, golangErr := cs.resolveGolangComponent(ctx, req.Purl, purlReq)
+		if golangErr != nil && !errors.Is(golangErr, errGolangNotResolved) {
+			return types.ComponentResponse{}, golangErr
+		}
+		if resolved != nil {
+			return types.ComponentResponse{
+				Purl:    req.Purl,
+				Version: resolved.Version,
+			}, nil
+		}
+		// No component/license found — if it's a GitHub component, try GitHub lookup
+		if strings.HasPrefix(req.Purl, "pkg:golang/github.com/") {
+			purl.Type, purlName, purl.Version, err = convertGolangToGithubPurl(req.Purl)
+			if err != nil {
+				return types.ComponentResponse{}, err
+			}
+		}
+	}
 	var allUrls []models.AllURL
 	if len(purl.Version) > 0 {
 		allUrls, err = cs.models.AllUrls.GetURLsByPurlNameTypeVersion(ctx, purlName, purl.Type, purl.Version)
@@ -103,7 +127,7 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 		return types.ComponentResponse{}, err
 	}
 
-	allUrl, err := cs.pickOneUrl(ctx, allUrls, purlName, purl.Type, purlReq)
+	allUrl, err := models.PickOneUrl(ctx, allUrls, purlName, purl.Type, purlReq)
 	if err != nil {
 		return types.ComponentResponse{}, err
 	}
@@ -118,65 +142,37 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 	}, nil
 }
 
-// pickOneUrl takes the potential matching component/versions and selects the most appropriate one.
-//
-//nolint:unparam // error kept for future use
-func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.AllURL, purlName, purlType, purlReq string) (models.AllURL, error) {
+// resolveGolangComponent looks up a golang component in the golang_projects table.
+// Returns a non-nil AllURL if the component was fully resolved (has both component and license data),
+// nil if the caller should fall through to all_urls lookup.
+func (cs *ComponentService) resolveGolangComponent(ctx context.Context, purlString, purlReq string) (*models.AllURL, error) {
 	s := ctxzap.Extract(ctx).Sugar()
-
-	if len(allUrls) == 0 {
-		s.Infof("No component match (in urls) found for %v, %v", purlName, purlType)
-		return models.AllURL{}, nil
+	allURL, err := cs.models.GolangProjects.GetGoLangURLByPurlString(ctx, purlString, purlReq)
+	if err != nil {
+		return nil, err
 	}
-
-	var c *semver.Constraints
-	if len(purlReq) > 0 {
-		s.Debugf("Building version constraint for %v: %v", purlName, purlReq)
-		var err error
-		c, err = semver.NewConstraint(purlReq)
-		if err != nil {
-			s.Warnf("Encountered an issue parsing version constraint string '%v' (%v,%v): %v", purlReq, purlName, purlType, err)
-		}
+	if len(allURL.Component) == 0 {
+		s.Debugf("Didn't find component in golang projects table for %v. Checking all urls...", purlString)
+		return nil, errGolangNotResolved
 	}
-
-	zeroVersion, _ := semver.NewVersion("v0.0.0")
-	var bestVersion *semver.Version
-	var bestURL models.AllURL
-
-	s.Debugf("Checking versions...")
-	for _, url := range allUrls {
-		if len(url.SemVer) == 0 && len(url.Version) == 0 {
-			s.Infof("Skipping match as it doesn't have a version: %#v", url)
-			continue
-		}
-
-		v, err := semver.NewVersion(url.Version)
-		if err != nil && len(url.SemVer) > 0 {
-			s.Debugf("Failed to parse SemVer: '%v'. Trying Version instead: %v (%v)", url.Version, url.SemVer, err)
-			v, err = semver.NewVersion(url.SemVer)
-		}
-		if err != nil {
-			s.Warnf("Encountered an issue parsing version string '%v' (%v) for %v: %v. Using v0.0.0", url.Version, url.SemVer, url, err)
-			v = zeroVersion
-		}
-
-		if c != nil && !c.Check(v) {
-			continue
-		}
-
-		if bestVersion == nil || v.GreaterThan(bestVersion) {
-			bestVersion = v
-			bestURL = url
-		}
+	if len(allURL.License) == 0 {
+		s.Debugf("Didn't find license in golang projects table for %v. Checking all urls...", purlString)
+		return nil, errGolangNotResolved
 	}
+	return &allURL, nil
+}
 
-	if bestVersion == nil { // TODO should we return the latest version anyway?
-		s.Warnf("No component match found for %v, %v after filter %v", purlName, purlType, purlReq)
-		return models.AllURL{}, nil
+// convertGolangToGithubPurl converts a golang GitHub purl string to a GitHub purl type,
+// returning the parsed purl components needed for all_urls lookup.
+func convertGolangToGithubPurl(purlString string) (string, string, string, error) {
+	ghPurlString := purlutils.ConvertGoPurlStringToGithub(purlString)
+	purl, err := purlutils.PurlFromString(ghPurlString)
+	if err != nil {
+		return "", "", "", err
 	}
-
-	s.Debugf("Selected highest version: %v", bestVersion)
-	bestURL.URL, _ = purlutils.ProjectUrl(purlName, purlType)
-	s.Debugf("Selected version: %#v", bestURL)
-	return bestURL, nil
+	purlName, err := purlutils.PurlNameFromString(ghPurlString)
+	if err != nil {
+		return "", "", "", err
+	}
+	return purl.Type, purlName, purl.Version, nil
 }

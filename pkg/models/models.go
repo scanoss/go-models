@@ -23,24 +23,26 @@ import (
 // Models provides unified access to all SCANOSS data models.
 // It maintains database connections and provides access to individual model instances.
 type Models struct {
-	AllUrls   *AllUrlsModel
-	Projects  *ProjectModel
-	Versions  *VersionModel
-	Licenses  *LicenseModel
-	Mines     *MineModel
-	DBVersion *DBVersionModel
+	AllUrls        *AllUrlsModel
+	Projects       *ProjectModel
+	Versions       *VersionModel
+	Licenses       *LicenseModel
+	Mines          *MineModel
+	DBVersion      *DBVersionModel
+	GolangProjects *GolangProjects
 }
 
 // NewModels creates a new instance of the unified SCANOSS models database wrapper.
 // It initializes all individual models and sets up their dependencies.
 func NewModels(db *sqlx.DB) *Models {
 	models := &Models{
-		AllUrls:   NewAllURLModel(db),
-		Projects:  NewProjectModel(db),
-		Versions:  NewVersionModel(db),
-		Licenses:  NewLicenseModel(db),
-		Mines:     NewMineModel(db),
-		DBVersion: NewDBVersionModel(db),
+		AllUrls:        NewAllURLModel(db),
+		Projects:       NewProjectModel(db),
+		Versions:       NewVersionModel(db),
+		Licenses:       NewLicenseModel(db),
+		Mines:          NewMineModel(db),
+		DBVersion:      NewDBVersionModel(db),
+		GolangProjects: NewGolangProjectModel(db),
 	}
 
 	return models

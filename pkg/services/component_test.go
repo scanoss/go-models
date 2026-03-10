@@ -137,9 +137,6 @@ func TestPickOneUrl(t *testing.T) {
 
 	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
 
-	modelsDB := models.NewModels(db)
-	service := NewComponentService(modelsDB)
-
 	tests := []struct {
 		name          string
 		urls          []models.AllURL
@@ -232,7 +229,7 @@ func TestPickOneUrl(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, pickErr := service.pickOneUrl(ctx, tt.urls, tt.component, tt.purlType, tt.requirement)
+			result, pickErr := models.PickOneUrl(ctx, tt.urls, tt.component, tt.purlType, tt.requirement)
 
 			if tt.shouldError && pickErr == nil {
 				t.Error("expected error but got none")
@@ -403,6 +400,157 @@ func TestGetComponent(t *testing.T) {
 				if result.Purl != tt.purl {
 					t.Errorf("expected purl %s, got %s", tt.purl, result.Purl)
 				}
+			}
+		})
+	}
+}
+
+func TestResolveGolangComponent(t *testing.T) {
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	ctx := ctxzap.ToContext(context.Background(), zlog.L)
+	db := testutils.SqliteSetup(t)
+	defer testutils.CloseDB(t, db)
+	testutils.LoadSQLDataFile(t, db, "../../internal/testutils/mock/golang_projects.sql")
+	testutils.LoadSQLDataFile(t, db, "../../internal/testutils/mock/mines.sql")
+	testutils.LoadSQLDataFile(t, db, "../../internal/testutils/mock/licenses.sql")
+	testutils.LoadSQLDataFile(t, db, "../../internal/testutils/mock/versions.sql")
+
+	modelsDB := models.NewModels(db)
+	service := NewComponentService(modelsDB)
+
+	tests := []struct {
+		name        string
+		purlString  string
+		purlReq     string
+		wantNil     bool
+		wantVersion string
+		shouldError bool
+	}{
+		{
+			name:        "fully resolved - scanoss/papi with license",
+			purlString:  "pkg:golang/github.com/scanoss/papi@v0.0.1",
+			purlReq:     "",
+			wantNil:     false,
+			wantVersion: "v0.0.1",
+			shouldError: false,
+		},
+		{
+			name:        "fully resolved - grpc with license",
+			purlString:  "pkg:golang/google.golang.org/grpc@v1.19.0",
+			purlReq:     "",
+			wantNil:     false,
+			wantVersion: "v1.19.0",
+			shouldError: false,
+		},
+		{
+			name:        "not resolved - non-existent component returns sentinel error",
+			purlString:  "pkg:golang/github.com/nonexistent/doesnotexist@v0.0.1",
+			purlReq:     "",
+			wantNil:     true,
+			shouldError: true,
+		},
+		{
+			name:        "empty purl string",
+			purlString:  "",
+			purlReq:     "",
+			wantNil:     true,
+			shouldError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, resolveErr := service.resolveGolangComponent(ctx, tt.purlString, tt.purlReq)
+			assertResolveResult(t, result, resolveErr, tt.shouldError, tt.wantNil, tt.wantVersion)
+		})
+	}
+}
+
+func assertResolveResult(t *testing.T, result *models.AllURL, err error, shouldError, wantNil bool, wantVersion string) {
+	t.Helper()
+	if shouldError {
+		if err == nil {
+			t.Error("expected error but got none")
+		}
+		return
+	}
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+		return
+	}
+	if wantNil {
+		if result != nil {
+			t.Errorf("expected nil result but got: %#v", result)
+		}
+		return
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result but got nil")
+	}
+	if result.Version != wantVersion {
+		t.Errorf("expected version %s, got %s", wantVersion, result.Version)
+	}
+}
+
+func TestConvertGolangToGithubPurl(t *testing.T) {
+	tests := []struct {
+		name            string
+		purlString      string
+		wantPurlType    string
+		wantPurlName    string
+		wantPurlVersion string
+		shouldError     bool
+	}{
+		{
+			name:            "convert golang github purl without version",
+			purlString:      "pkg:golang/github.com/scanoss/papi",
+			wantPurlType:    "github",
+			wantPurlName:    "scanoss/papi",
+			wantPurlVersion: "",
+			shouldError:     false,
+		},
+		{
+			name:            "convert golang github purl with version",
+			purlString:      "pkg:golang/github.com/scanoss/papi@v0.0.1",
+			wantPurlType:    "github",
+			wantPurlName:    "scanoss/papi",
+			wantPurlVersion: "v0.0.1",
+			shouldError:     false,
+		},
+		{
+			name:        "invalid purl string",
+			purlString:  "invalid",
+			shouldError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			purlType, purlName, purlVersion, err := convertGolangToGithubPurl(tt.purlString)
+
+			if tt.shouldError {
+				if err == nil {
+					t.Error("expected error but got none")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			if purlType != tt.wantPurlType {
+				t.Errorf("expected purlType %s, got %s", tt.wantPurlType, purlType)
+			}
+			if purlName != tt.wantPurlName {
+				t.Errorf("expected purlName %s, got %s", tt.wantPurlName, purlName)
+			}
+			if purlVersion != tt.wantPurlVersion {
+				t.Errorf("expected purlVersion %s, got %s", tt.wantPurlVersion, purlVersion)
 			}
 		})
 	}

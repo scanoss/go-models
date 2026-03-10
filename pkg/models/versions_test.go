@@ -81,6 +81,7 @@ func TestVersionsSearchBadSql(t *testing.T) {
 	ctx := ctxzap.ToContext(context.Background(), zlog.L)
 	db := testutils.SqliteSetup(t) // Setup SQL Lite DB
 	defer testutils.CloseDB(t, db)
+	_, _ = db.Exec("DROP TABLE IF EXISTS versions")
 
 	versionModel := NewVersionModel(db)
 	_, err = versionModel.GetVersionByName(ctx, "rubbish")

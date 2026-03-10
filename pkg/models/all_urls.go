@@ -20,10 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
-	"github.com/scanoss/go-models/pkg/helpers"
+	purlutils "github.com/scanoss/go-purl-helper/pkg"
 )
 
 // AllUrlsModel provides database access for URL information.
@@ -49,6 +51,20 @@ func NewAllURLModel(db *sqlx.DB) *AllUrlsModel {
 	return &AllUrlsModel{
 		db: db,
 	}
+}
+
+// semverTogglePrefix returns the alternate version string by toggling the "v" prefix.
+func semverTogglePrefix(version string) string {
+	if len(version) == 0 {
+		return version
+	}
+	if _, err := semver.NewVersion(version); err == nil {
+		if version[0] != 'v' {
+			return "v" + version
+		}
+		return strings.TrimLeft(version, "v")
+	}
+	return version
 }
 
 // GetURLsByPurlNameType retrieves all component URLs matching the specified PURL name and type.
@@ -99,7 +115,7 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 		s.Error("Please specify a valid Purl Version to query")
 		return nil, errors.New("please specify a valid Purl Version to query")
 	}
-	semverV := helpers.SemverTogglePrefix(purlVersion)
+	semverV := semverTogglePrefix(purlVersion)
 
 	// This query is same as GetURLsByPurlNameType but adds a WHERE clause for versions
 	query := "SELECT component, v.version_name AS version, v.semver AS semver," +
@@ -119,4 +135,67 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 
 	s.Debugf("Found %v results for %v, %v, %v.", len(allUrls), purlType, purlName, purlVersion)
 	return allUrls, nil
+}
+
+// PickOneUrl takes the potential matching component/versions and selects the most appropriate one.
+//
+
+func PickOneUrl(ctx context.Context, allUrls []AllURL, purlName, purlType, purlReq string) (AllURL, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+
+	if len(allUrls) == 0 {
+		s.Infof("No component match (in urls) found for %v, %v", purlName, purlType)
+		return AllURL{}, nil
+	}
+
+	var c *semver.Constraints
+	if len(purlReq) > 0 {
+		s.Debugf("Building version constraint for %v: %v", purlName, purlReq)
+		var err error
+		c, err = semver.NewConstraint(purlReq)
+		if err != nil {
+			s.Warnf("Encountered an issue parsing version constraint string '%v' (%v,%v): %v", purlReq, purlName, purlType, err)
+		}
+	}
+
+	zeroVersion, _ := semver.NewVersion("v0.0.0")
+	var bestVersion *semver.Version
+	var bestURL AllURL
+
+	s.Debugf("Checking versions...")
+	for _, url := range allUrls {
+		if len(url.SemVer) == 0 && len(url.Version) == 0 {
+			s.Infof("Skipping match as it doesn't have a version: %#v", url)
+			continue
+		}
+
+		v, err := semver.NewVersion(url.Version)
+		if err != nil && len(url.SemVer) > 0 {
+			s.Debugf("Failed to parse SemVer: '%v'. Trying Version instead: %v (%v)", url.Version, url.SemVer, err)
+			v, err = semver.NewVersion(url.SemVer)
+		}
+		if err != nil {
+			s.Warnf("Encountered an issue parsing version string '%v' (%v) for %v: %v. Using v0.0.0", url.Version, url.SemVer, url, err)
+			v = zeroVersion
+		}
+
+		if c != nil && !c.Check(v) {
+			continue
+		}
+
+		if bestVersion == nil || v.GreaterThan(bestVersion) {
+			bestVersion = v
+			bestURL = url
+		}
+	}
+
+	if bestVersion == nil { // TODO should we return the latest version anyway?
+		s.Warnf("No component match found for %v, %v after filter %v", purlName, purlType, purlReq)
+		return AllURL{}, nil
+	}
+
+	s.Debugf("Selected highest version: %v", bestVersion)
+	bestURL.URL, _ = purlutils.ProjectUrl(purlName, purlType)
+	s.Debugf("Selected version: %#v", bestURL)
+	return bestURL, nil
 }
