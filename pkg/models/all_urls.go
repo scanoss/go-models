@@ -120,3 +120,28 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 	s.Debugf("Found %v results for %v, %v, %v.", len(allUrls), purlType, purlName, purlVersion)
 	return allUrls, nil
 }
+
+// CheckPurlByNameType checks the all_urls table for the existence of entries matching a Purl Name and Type.
+func (m *AllUrlsModel) CheckPurlByNameType(ctx context.Context, purlName string, purlType string) (bool, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+	if len(purlName) == 0 {
+		s.Error("Please specify a valid Purl Name to query")
+		return false, errors.New("please specify a valid Purl Name to query")
+	}
+	if len(purlType) == 0 {
+		s.Error("Please specify a valid Purl Type to query")
+		return false, errors.New("please specify a valid Purl Type to query")
+	}
+	var exists bool
+	err := m.db.QueryRowxContext(ctx,
+		"SELECT EXISTS("+
+			"SELECT 1 FROM all_urls au"+
+			" INNER JOIN mines m ON au.mine_id = m.id"+
+			" WHERE au.purl_name = $1 AND m.purl_type = $2)",
+		purlName, purlType).Scan(&exists)
+	if err != nil {
+		s.Errorf("Error: Failed to query all_urls table for %v, %v: %v", purlName, purlType, err)
+		return false, fmt.Errorf("failed to query the all_urls table: %v", err)
+	}
+	return exists, nil
+}
