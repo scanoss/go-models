@@ -157,7 +157,7 @@ func TestPickOneUrl(t *testing.T) {
 			purlType:      "",
 			requirement:   "",
 			expectedVer:   "",
-			shouldError:   false,
+			shouldError:   true,
 			expectedEmpty: true,
 		},
 		{
@@ -225,7 +225,7 @@ func TestPickOneUrl(t *testing.T) {
 			purlType:      "npm",
 			requirement:   "^2.0.0",
 			expectedVer:   "",
-			shouldError:   false,
+			shouldError:   true,
 			expectedEmpty: true,
 		},
 	}
@@ -403,6 +403,80 @@ func TestGetComponent(t *testing.T) {
 				if result.Purl != tt.purl {
 					t.Errorf("expected purl %s, got %s", tt.purl, result.Purl)
 				}
+			}
+		})
+	}
+}
+
+func TestCheckPurl(t *testing.T) {
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	ctx := ctxzap.ToContext(context.Background(), zlog.L)
+	db := testutils.SqliteSetup(t)
+	defer testutils.CloseDB(t, db)
+
+	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
+	modelsDB := models.NewModels(db)
+	service := NewComponentService(modelsDB)
+
+	tests := []struct {
+		name        string
+		purl        string
+		expected    bool
+		shouldError bool
+	}{
+		{
+			name:        "empty purl",
+			purl:        "",
+			expected:    false,
+			shouldError: true,
+		},
+		{
+			name:        "invalid purl format",
+			purl:        "invalid-purl",
+			expected:    false,
+			shouldError: true,
+		},
+		{
+			name:        "valid purl with empty name",
+			purl:        "pkg:npm/",
+			expected:    false,
+			shouldError: true,
+		},
+		{
+			name:        "existing purl",
+			purl:        "pkg:npm/electron-updater",
+			expected:    true,
+			shouldError: false,
+		},
+		{
+			name:        "non-existing purl",
+			purl:        "pkg:npm/non-existent-package",
+			expected:    false,
+			shouldError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, checkErr := service.checkPurl(ctx, tt.purl)
+
+			if tt.shouldError {
+				if checkErr == nil {
+					t.Error("expected error but got none")
+				}
+				return
+			}
+			if checkErr != nil {
+				t.Errorf("unexpected error: %v", checkErr)
+				return
+			}
+			if result != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, result)
 			}
 		})
 	}

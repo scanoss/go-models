@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Changed `CheckPurl` to unexported `checkPurl` in `ComponentService`
+- Added `ErrComponentNotFound` and `ErrVersionNotFound` sentinel errors in `ComponentService`
+- Added early PURL existence check in `GetComponent` using `checkPurl`
+- Moved `CheckPurlByNameType` from `ProjectModel` to `AllUrlsModel` to query `all_urls` table instead of `projects` table
+- Updated `pickOneUrl` to return `ErrVersionNotFound` instead of nil error
+- Added `TestCheckPurl` test cases for the `checkPurl` method
+
+### ⚠ Breaking Changes                                                                                                                           
+- `CheckPurl` is no longer exported. External callers should use `GetComponent`, which now performs PURL existence checks internally.            
+- `GetComponent` and `pickOneUrl` now return `ErrComponentNotFound` or `ErrVersionNotFound` sentinel errors instead of generic errors or `nil`. Callers that check error messages should switch to `errors.Is()`.                                                                                 
 
 ## [0.6.0] - 2026-03-09
 ### Changed
