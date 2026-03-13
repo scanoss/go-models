@@ -28,6 +28,12 @@ import (
 	purlutils "github.com/scanoss/go-purl-helper/pkg"
 )
 
+// ErrComponentNotFound is returned when no component match is found for the given PURL.
+var ErrComponentNotFound = errors.New("component not found")
+
+// ErrVersionNotFound is returned when a component exists but no version could be determined.
+var ErrVersionNotFound = errors.New("version not found")
+
 // ComponentService orchestrates component lookup logic using extracted business logic.
 type ComponentService struct {
 	models *models.Models
@@ -41,28 +47,39 @@ func NewComponentService(models *models.Models) *ComponentService {
 	}
 }
 
-func (cs *ComponentService) CheckPurl(ctx context.Context, p string) (int, error) {
-	if len(p) == 0 {
-		return -1, errors.New("please specify a valid purl to query")
+// CheckPurl checks whether the given purl exists in the knowledge base.
+// The purl parameter should be a package URL without a version (e.g. "pkg:github/scanoss/scanner.c").
+// Returns true if the purl is found, false otherwise.
+func (cs *ComponentService) checkPurl(ctx context.Context, purl string) (bool, error) {
+	if len(purl) == 0 {
+		return false, ErrComponentNotFound
 	}
-
-	purl, err := purlutils.PurlFromString(p)
+	packageURL, err := purlutils.PurlFromString(purl)
 	if err != nil {
-		return -1, fmt.Errorf("failed to parse purl: %w", err)
+		return false, err
 	}
-
-	purlName, err := purlutils.PurlNameFromString(p) // Make sure we just have the bare minimum for a Purl Name
+	purlName, err := purlutils.PurlNameFromString(purl) // Make sure we just have the bare minimum for a Purl Name
 	if err != nil {
-		return -1, fmt.Errorf("failed to extract purl name: %w", err)
+		return false, err
 	}
-
-	return cs.models.Projects.CheckPurlByNameType(ctx, purlName, purl.Type)
+	count, err := cs.models.AllUrls.CheckPurlByNameType(ctx, purlName, packageURL.Type)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 // GetComponent retrieves component information based on PURL and requirements.
 func (cs *ComponentService) GetComponent(ctx context.Context, req types.ComponentRequest) (types.ComponentResponse, error) {
 	// TODO: Simplify component selection logic.
 	// The code was inspired from scanoss.com/dependencies and heavily refactored
+	purlExists, err := cs.checkPurl(ctx, req.Purl)
+	if err != nil {
+		return types.ComponentResponse{}, err
+	}
+	if !purlExists {
+		return types.ComponentResponse{}, ErrComponentNotFound
+	}
 
 	if len(req.Purl) == 0 {
 		return types.ComponentResponse{}, errors.New("please specify a valid purl to query")
@@ -109,7 +126,7 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 	}
 
 	if len(allUrl.Version) == 0 {
-		return types.ComponentResponse{}, fmt.Errorf("cannot find version for purl %s", req.Purl)
+		return types.ComponentResponse{}, ErrVersionNotFound
 	}
 
 	return types.ComponentResponse{
@@ -119,14 +136,13 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 }
 
 // pickOneUrl takes the potential matching component/versions and selects the most appropriate one.
-//
-//nolint:unparam // error kept for future use
+
 func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.AllURL, purlName, purlType, purlReq string) (models.AllURL, error) {
 	s := ctxzap.Extract(ctx).Sugar()
 
 	if len(allUrls) == 0 {
 		s.Infof("No component match (in urls) found for %v, %v", purlName, purlType)
-		return models.AllURL{}, nil
+		return models.AllURL{}, ErrVersionNotFound
 	}
 
 	var c *semver.Constraints
@@ -172,7 +188,7 @@ func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.All
 
 	if bestVersion == nil { // TODO should we return the latest version anyway?
 		s.Warnf("No component match found for %v, %v after filter %v", purlName, purlType, purlReq)
-		return models.AllURL{}, nil
+		return models.AllURL{}, ErrVersionNotFound
 	}
 
 	s.Debugf("Selected highest version: %v", bestVersion)
