@@ -408,6 +408,95 @@ func TestGetComponent(t *testing.T) {
 	}
 }
 
+func TestGetComponentVersionsInvalidPurl(t *testing.T) {
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	ctx := ctxzap.ToContext(context.Background(), zlog.L)
+	db := testutils.SqliteSetup(t)
+	defer testutils.CloseDB(t, db)
+
+	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
+	modelsDB := models.NewModels(db)
+	service := NewComponentService(modelsDB)
+
+	invalidPurls := []string{"invalid-purl", "pkg:npm/"}
+	for _, purl := range invalidPurls {
+		_, getErr := service.GetComponentVersions(ctx, purl)
+		if getErr == nil {
+			t.Errorf("expected error for purl %q but got none", purl)
+		}
+	}
+}
+
+func TestGetComponentVersionsNonExistent(t *testing.T) {
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	ctx := ctxzap.ToContext(context.Background(), zlog.L)
+	db := testutils.SqliteSetup(t)
+	defer testutils.CloseDB(t, db)
+
+	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
+	modelsDB := models.NewModels(db)
+	service := NewComponentService(modelsDB)
+
+	result, getErr := service.GetComponentVersions(ctx, "pkg:npm/non-existent-package")
+	if getErr != nil {
+		t.Errorf("unexpected error: %v", getErr)
+	}
+	if len(result.Versions) != 0 {
+		t.Errorf("expected empty versions, got %d", len(result.Versions))
+	}
+}
+
+func TestGetComponentVersions(t *testing.T) {
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	ctx := ctxzap.ToContext(context.Background(), zlog.L)
+	db := testutils.SqliteSetup(t)
+	defer testutils.CloseDB(t, db)
+
+	testutils.LoadMockSQLData(t, db, "../../internal/testutils/mock")
+
+	modelsDB := models.NewModels(db)
+	service := NewComponentService(modelsDB)
+
+	purl := "pkg:npm/electron-updater"
+	expectedVersions := []string{"4.0.8", "4.6.5", "4.3.5", "4.2.0"}
+
+	result, getErr := service.GetComponentVersions(ctx, purl)
+	if getErr != nil {
+		t.Fatalf("unexpected error: %v", getErr)
+	}
+	if result.Purl != purl {
+		t.Errorf("expected purl %s, got %s", purl, result.Purl)
+	}
+	// Check no duplicates
+	seen := make(map[string]struct{})
+	for _, v := range result.Versions {
+		if _, ok := seen[v]; ok {
+			t.Errorf("duplicate version found: %s", v)
+		}
+		seen[v] = struct{}{}
+	}
+	// Check all expected versions are present
+	for _, expected := range expectedVersions {
+		if _, ok := seen[expected]; !ok {
+			t.Errorf("expected version %s not found in results", expected)
+		}
+	}
+}
+
 func TestCheckPurl(t *testing.T) {
 	err := zlog.NewSugaredDevLogger()
 	if err != nil {
