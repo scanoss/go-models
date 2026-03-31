@@ -135,6 +135,42 @@ func (cs *ComponentService) GetComponent(ctx context.Context, req types.Componen
 	}, nil
 }
 
+// GetComponentVersions retrieves all available versions for a given PURL.
+func (cs *ComponentService) GetComponentVersions(ctx context.Context, purl string) (types.ComponentVersionsResponse, error) {
+	packageURL, err := purlutils.PurlFromString(purl)
+	if err != nil {
+		return types.ComponentVersionsResponse{}, fmt.Errorf("failed to parse purl: %w", err)
+	}
+
+	purlName, err := purlutils.PurlNameFromString(purl)
+	if err != nil {
+		return types.ComponentVersionsResponse{}, fmt.Errorf("failed to extract purl name: %w", err)
+	}
+
+	allUrls, err := cs.models.AllUrls.GetVersionsByPurlNameType(ctx, purlName, packageURL.Type)
+	if err != nil {
+		return types.ComponentVersionsResponse{}, err
+	}
+
+	seen := make(map[string]struct{})
+	var versions []string
+	for _, u := range allUrls {
+		if len(u.Version) == 0 {
+			continue
+		}
+		if _, ok := seen[u.Version]; ok {
+			continue
+		}
+		seen[u.Version] = struct{}{}
+		versions = append(versions, u.Version)
+	}
+
+	return types.ComponentVersionsResponse{
+		Purl:     purl,
+		Versions: versions,
+	}, nil
+}
+
 // pickOneUrl takes the potential matching component/versions and selects the most appropriate one.
 
 func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.AllURL, purlName, purlType, purlReq string) (models.AllURL, error) {

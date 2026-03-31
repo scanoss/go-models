@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-03-31
+### Added
+- Added `GetComponentVersions` method in `ComponentService` to retrieve all available versions for a given PURL
+- Added `GetVersionsByPurlNameType` method in `AllUrlsModel` to query distinct versions by PURL name and type
+- Added `ComponentVersionsResponse` type for version listing responses
+- Added `TestGetComponentVersions` test cases
+
 ## [0.7.0] - 2026-03-16
 ### Changed
 - Changed `CheckPurl` to unexported `checkPurl` in `ComponentService`
@@ -86,3 +93,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.1]: https://github.com/scanoss/go-models/compare/v0.5.0...v0.5.1
 [0.6.0]: https://github.com/scanoss/go-models/compare/v0.5.1...v0.6.0
 [0.7.0]: https://github.com/scanoss/go-models/compare/v0.6.0...v0.7.0
+[0.8.0]: https://github.com/scanoss/go-models/compare/v0.7.0...v0.8.0

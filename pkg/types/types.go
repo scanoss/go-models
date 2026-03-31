@@ -42,3 +42,12 @@ type ComponentResponse struct {
 	// Version is the component version.
 	Version string `json:"version"`
 }
+
+// ComponentVersionsResponse represents the response containing all versions for a component.
+type ComponentVersionsResponse struct {
+	// Purl is the Package URL of the component (without version)
+	Purl string `json:"purl"`
+
+	// Versions is the list of all available versions for the component.
+	Versions []string `json:"versions"`
+}

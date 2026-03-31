@@ -33,15 +33,16 @@ type AllUrlsModel struct {
 
 // AllURL represents a row on the AllURL table.
 type AllURL struct {
-	Component string `db:"component"`
-	Version   string `db:"version"`
-	SemVer    string `db:"semver"`
-	License   string `db:"license"`
-	LicenseID int32  `db:"license_id"`
-	IsSpdx    bool   `db:"is_spdx"`
-	PurlName  string `db:"purl_name"`
-	MineID    int32  `db:"mine_id"`
-	URL       string `db:"-"` // Computed field, not from database
+	Component string  `db:"component"`
+	Version   string  `db:"version"`
+	SemVer    string  `db:"semver"`
+	License   string  `db:"license"`
+	LicenseID int32   `db:"license_id"`
+	IsSpdx    bool    `db:"is_spdx"`
+	PurlName  string  `db:"purl_name"`
+	MineID    int32   `db:"mine_id"`
+	Date      *string `db:"date"`
+	URL       string  `db:"-"` // Computed field, not from database
 }
 
 // NewAllURLModel creates a new instance of the AllUrlsModel.
@@ -118,6 +119,37 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 	}
 
 	s.Debugf("Found %v results for %v, %v, %v.", len(allUrls), purlType, purlName, purlVersion)
+	return allUrls, nil
+}
+
+// GetVersionsByPurlNameType retrieves all distinct versions for a given PURL name and type.
+func (m *AllUrlsModel) GetVersionsByPurlNameType(ctx context.Context, purlName, purlType string) ([]AllURL, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+	if len(purlName) == 0 {
+		s.Error("Please specify a valid Purl Name to query")
+		return nil, errors.New("please specify a valid Purl Name to query")
+	}
+	if len(purlType) == 0 {
+		s.Errorf("Please specify a valid Purl Type to query: %v", purlName)
+		return nil, errors.New("please specify a valid Purl Type to query")
+	}
+
+	query := "SELECT DISTINCT component, v.version_name AS version, v.semver AS semver," +
+		" l.license_name AS license, l.is_spdx AS is_spdx, u.license_id," +
+		" purl_name, mine_id, date FROM all_urls u" +
+		" LEFT JOIN mines m ON u.mine_id = m.id" +
+		" LEFT JOIN licenses l ON u.license_id = l.id" +
+		" LEFT JOIN versions v ON u.version_id = v.id" +
+		" WHERE m.purl_type = $1 AND u.purl_name = $2 ORDER BY date DESC"
+
+	var allUrls []AllURL
+	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName)
+	if err != nil {
+		s.Errorf("Failed to query all urls table for %v - %v: %v", purlType, purlName, err)
+		return nil, fmt.Errorf("failed to query the all urls table: %v", err)
+	}
+
+	s.Debugf("Found %v distinct versions for %v, %v.", len(allUrls), purlType, purlName)
 	return allUrls, nil
 }
 
