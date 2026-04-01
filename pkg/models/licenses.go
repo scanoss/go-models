@@ -21,6 +21,8 @@ package models
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -34,11 +36,94 @@ type LicenseModel struct {
 	db *sqlx.DB
 }
 
+// SeeAlsoArray represents an array of strings that can be stored as JSON in the database.
+type SeeAlsoArray []string
+
+// Scan implements the sql.Scanner interface for database deserialization.
+func (s *SeeAlsoArray) Scan(value interface{}) error {
+	if value == nil {
+		*s = nil
+		return nil
+	}
+
+	switch v := value.(type) {
+	case string:
+		if v == "" {
+			*s = []string{}
+			return nil
+		}
+		// Check if it's PostgreSQL array format
+		if strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}") {
+			return s.parsePostgreSQLArray(v)
+		}
+		// Otherwise try JSON
+		return json.Unmarshal([]byte(v), s)
+	case []byte:
+		if len(v) == 0 {
+			*s = []string{}
+			return nil
+		}
+		str := string(v)
+		// Check if it's PostgreSQL array format
+		if strings.HasPrefix(str, "{") && strings.HasSuffix(str, "}") {
+			return s.parsePostgreSQLArray(str)
+		}
+		// Otherwise try JSON
+		return json.Unmarshal(v, s)
+	default:
+		return fmt.Errorf("cannot scan %T into SeeAlsoArray", value)
+	}
+}
+
+// parsePostgreSQLArray parses PostgreSQL array format like {val1,val2,val3}.
+func (s *SeeAlsoArray) parsePostgreSQLArray(str string) error {
+	// Remove curly braces
+	content := str[1 : len(str)-1]
+	if content == "" {
+		*s = []string{}
+		return nil
+	}
+
+	// Split by comma and clean up each element
+	parts := strings.Split(content, ",")
+	result := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	*s = result
+	return nil
+}
+
+// Value implements the driver.Valuer interface for database serialization.
+func (s SeeAlsoArray) Value() (driver.Value, error) {
+	if s == nil {
+		return nil, nil //nolint:nilnil // driver.Valuer requires (nil, nil) for NULL values
+	}
+	return json.Marshal(s)
+}
+
 type License struct {
 	ID          int32  `db:"id"`
 	LicenseName string `db:"license_name"`
 	SPDX        string `db:"spdx_id"`
 	IsSpdx      bool   `db:"is_spdx"`
+}
+
+type SPDXLicenseDetail struct {
+	ID                    string       `db:"id"`
+	Type                  string       `db:"type"`
+	Reference             string       `db:"reference"`
+	IsDeprecatedLicenseId *bool        `db:"isdeprecatedlicenseid"`
+	DetailsURL            string       `db:"detailsurl"`
+	ReferenceNumber       string       `db:"referencenumber"`
+	Name                  string       `db:"name"`
+	SeeAlso               SeeAlsoArray `db:"seealso"`
+	IsOsiApproved         *bool        `db:"isosiapproved"`
 }
 
 var bannedLicPrefixes = []string{"see ", "\"", "'", "-", "*", ".", "/", "?", "@", "\\", ";", ",", "`", "$"} // unwanted license prefixes
@@ -88,6 +173,40 @@ func (m *LicenseModel) GetLicenseByName(ctx context.Context, name string) (Licen
 	}
 
 	return license, nil
+}
+
+// GetSPDXLicenseDetails get spdx license details.
+func (m *LicenseModel) GetSPDXLicenseDetails(ctx context.Context, spdxId string) (SPDXLicenseDetail, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+	if spdxId == "" {
+		s.Error("Please specify a valid SPDX ID to query")
+		return SPDXLicenseDetail{}, errors.New("please specify a valid SPDX ID to query")
+	}
+	s.Debugf("Getting SPDX License Details for %v", spdxId)
+	spdxIdToLower := strings.ToLower(spdxId)
+	var license SPDXLicenseDetail
+	err := m.db.QueryRowxContext(ctx,
+		"SELECT id, type, reference, isdeprecatedlicenseid, detailsurl, referencenumber, name, seealso, isosiapproved"+
+			" FROM spdx_license_data WHERE LOWER(id) = LOWER($1)", spdxIdToLower).StructScan(&license)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		s.Errorf("Error: Failed to query spdx_license_data table for %v: %#v", spdxId, err)
+		return SPDXLicenseDetail{}, fmt.Errorf("failed to query the spdx_license_data table: %v", err)
+	}
+	return license, nil
+}
+
+// GetAllSPDXLicensesDetails get all spdx licenses details.
+func (m *LicenseModel) GetAllSPDXLicensesDetails(ctx context.Context) ([]SPDXLicenseDetail, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+	var licenses []SPDXLicenseDetail
+	err := m.db.SelectContext(ctx, &licenses,
+		"SELECT id, type, reference, isdeprecatedlicenseid, detailsurl, referencenumber, name, seealso, isosiapproved"+
+			" FROM spdx_license_data")
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		s.Errorf("Error: Failed to query spdx_license_data table %#v", err)
+		return []SPDXLicenseDetail{}, fmt.Errorf("failed to query the spdx_license_data table: %v", err)
+	}
+	return licenses, nil
 }
 
 // CleanseLicenseName cleans up a license name to make it searchable in the licenses table.

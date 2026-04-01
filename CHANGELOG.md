@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-01
+### Added
+- Added `GetSPDXLicenseDetails` method in `LicenseModel` to retrieve SPDX license details by ID from the `spdx_license_data` table
+- Added `GetAllSPDXLicensesDetails` method in `LicenseModel` to retrieve all SPDX license details from the `spdx_license_data` table
+- Added `SPDXLicenseDetail` struct for SPDX license detail responses
+- Added `SeeAlsoArray` custom type with `sql.Scanner` and `driver.Valuer` implementations for handling PostgreSQL/JSON array serialization
+- Added `TestSeeAlsoArray_Scan` test cases
+
+### Changed
+- Upgraded Go version to 1.25.0
+- Upgraded `scanoss/go-purl-helper` to v0.3.0
+- Upgraded dependencies to latest versions
+
 ## [0.8.0] - 2026-03-31
 ### Added
 - Added `GetComponentVersions` method in `ComponentService` to retrieve all available versions for a given PURL
@@ -94,3 +107,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.6.0]: https://github.com/scanoss/go-models/compare/v0.5.1...v0.6.0
 [0.7.0]: https://github.com/scanoss/go-models/compare/v0.6.0...v0.7.0
 [0.8.0]: https://github.com/scanoss/go-models/compare/v0.7.0...v0.8.0
+[0.9.0]: https://github.com/scanoss/go-models/compare/v0.8.0...v0.9.0
