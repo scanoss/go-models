@@ -71,7 +71,9 @@ func (m *AllUrlsModel) GetURLsByPurlNameType(ctx context.Context, purlName, purl
 		" LEFT JOIN mines m ON u.mine_id = m.id" +
 		" LEFT JOIN licenses l ON u.license_id = l.id" +
 		" LEFT JOIN versions v ON u.version_id = v.id" +
-		" WHERE m.purl_type = $1 AND u.purl_name = $2 ORDER BY date DESC"
+		" WHERE m.purl_type = $1 AND u.purl_name = $2" +
+		" AND u.is_mined != false AND u.package_hash != ''" +
+		" ORDER BY date DESC"
 
 	var allUrls []AllURL
 	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName)
@@ -109,7 +111,9 @@ func (m *AllUrlsModel) GetURLsByPurlNameTypeVersion(ctx context.Context, purlNam
 		" LEFT JOIN mines m ON u.mine_id = m.id" +
 		" LEFT JOIN licenses l ON u.license_id = l.id" +
 		" LEFT JOIN versions v ON u.version_id = v.id" +
-		" WHERE m.purl_type = $1 AND u.purl_name = $2 AND (v.version_name = $3  OR v.version_name = $4) ORDER BY date DESC"
+		" WHERE m.purl_type = $1 AND u.purl_name = $2 AND (v.version_name = $3  OR v.version_name = $4)" +
+		" AND u.is_mined != false AND u.package_hash != ''" +
+		" ORDER BY date DESC"
 
 	var allUrls []AllURL
 	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName, purlVersion, semverV)
@@ -140,7 +144,9 @@ func (m *AllUrlsModel) GetVersionsByPurlNameType(ctx context.Context, purlName, 
 		" LEFT JOIN mines m ON u.mine_id = m.id" +
 		" LEFT JOIN licenses l ON u.license_id = l.id" +
 		" LEFT JOIN versions v ON u.version_id = v.id" +
-		" WHERE m.purl_type = $1 AND u.purl_name = $2 ORDER BY date DESC"
+		" WHERE m.purl_type = $1 AND u.purl_name = $2" +
+		" AND u.is_mined != false AND u.package_hash != ''" +
+		" ORDER BY date DESC"
 
 	var allUrls []AllURL
 	err := m.db.SelectContext(ctx, &allUrls, query, purlType, purlName)
@@ -169,7 +175,8 @@ func (m *AllUrlsModel) CheckPurlByNameType(ctx context.Context, purlName string,
 		"SELECT EXISTS("+
 			"SELECT 1 FROM all_urls au"+
 			" INNER JOIN mines m ON au.mine_id = m.id"+
-			" WHERE au.purl_name = $1 AND m.purl_type = $2)",
+			" WHERE au.purl_name = $1 AND m.purl_type = $2"+
+			" AND au.is_mined != false AND au.package_hash != '')",
 		purlName, purlType).Scan(&exists)
 	if err != nil {
 		s.Errorf("Error: Failed to query all_urls table for %v, %v: %v", purlName, purlType, err)

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-04-06
+### Fixed
+- Added `is_mined != false AND package_hash != ''` filter conditions to `GetURLsByPurlNameType`, `GetURLsByPurlNameTypeVersion`, and `GetVersionsByPurlNameType` queries to exclude unmined and empty-hash records
+
 ## [0.9.0] - 2026-04-01
 ### Added
 - Added `GetSPDXLicenseDetails` method in `LicenseModel` to retrieve SPDX license details by ID from the `spdx_license_data` table
@@ -108,3 +112,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.7.0]: https://github.com/scanoss/go-models/compare/v0.6.0...v0.7.0
 [0.8.0]: https://github.com/scanoss/go-models/compare/v0.7.0...v0.8.0
 [0.9.0]: https://github.com/scanoss/go-models/compare/v0.8.0...v0.9.0
+[0.10.0]: https://github.com/scanoss/go-models/compare/v0.9.0...v0.10.0

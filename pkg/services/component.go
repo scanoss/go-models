@@ -175,7 +175,7 @@ func (cs *ComponentService) GetComponentVersions(ctx context.Context, purl strin
 
 func (cs *ComponentService) pickOneUrl(ctx context.Context, allUrls []models.AllURL, purlName, purlType, purlReq string) (models.AllURL, error) {
 	s := ctxzap.Extract(ctx).Sugar()
-
+	s.Debugf("Picking one URL from %v", allUrls)
 	if len(allUrls) == 0 {
 		s.Infof("No component match (in urls) found for %v, %v", purlName, purlType)
 		return models.AllURL{}, ErrVersionNotFound
