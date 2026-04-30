@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `SourcePurl` type for the public, decoded source PURL response
 - Added `ErrSourcePurlNotFound` sentinel error in `ComponentService`
 - Added `is_mined` column to the `all_urls` mock schema
+- Added `ProjectService` with `GetProject` method to retrieve a project data
+- Added `GetProjectByPurl` method in `ProjectModel`
+- Added `Project` type for the public, decoded project response, with nullable source columns (`source_mine_id`, `source_purl_name`, `source_vendor`, `source_component`) exposed as pointers
+- Added `ErrProjectNotFound` sentinel error in `ProjectService`
+- Wired `ProjectService` into `scanoss.Client`
+
+### Changed
+- Extended `ProjectModel.Project` struct with `MineID`, `PurlType`, `Vendor`,`SourceMineName`, `SourcePurlType`, `SourceRepositoryURL`
 
 ## [0.9.0] - 2026-04-01
 ### Added

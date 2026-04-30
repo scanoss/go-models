@@ -26,6 +26,7 @@ import (
 type Client struct {
 	Models    *models.Models
 	Component *services.ComponentService
+	Project   *services.ProjectService
 }
 
 // New creates a SCANOSS Model Client.
@@ -34,9 +35,11 @@ func New(db *sqlx.DB) *Client {
 
 	// Initialize services
 	component := services.NewComponentService(m)
+	project := services.NewProjectService(m)
 
 	return &Client{
 		Models:    m,
 		Component: component,
+		Project:   project,
 	}
 }

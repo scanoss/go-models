@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2018-2022 SCANOSS.COM
+ * Copyright (C) 2018-2026 SCANOSS.COM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ package models
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -32,14 +33,24 @@ type ProjectModel struct {
 }
 
 type Project struct {
-	PurlName     string `db:"purl_name"`
-	Component    string `db:"component"`
-	License      string `db:"license"`
-	LicenseID    string `db:"license_id"`
-	IsSpdx       bool   `db:"is_spdx"`
-	GitLicense   string `db:"g_license"`
-	GitLicenseID string `db:"g_license_id"`
-	GitIsSpdx    bool   `db:"g_is_spdx"`
+	MineID              int32   `db:"mine_id"`
+	PurlName            string  `db:"purl_name"`
+	PurlType            string  `db:"purl_type"`
+	Vendor              string  `db:"vendor"`
+	Component           string  `db:"component"`
+	License             string  `db:"license"`
+	LicenseID           string  `db:"license_id"`
+	IsSpdx              bool    `db:"is_spdx"`
+	GitLicense          string  `db:"g_license"`
+	GitLicenseID        string  `db:"g_license_id"`
+	GitIsSpdx           bool    `db:"g_is_spdx"`
+	SourceMineID        *int32  `db:"source_mine_id"`
+	SourcePurlName      *string `db:"source_purl_name"`
+	SourceVendor        *string `db:"source_vendor"`
+	SourceComponent     *string `db:"source_component"`
+	SourceMineName      string  `db:"source_mine_name"`
+	SourcePurlType      string  `db:"source_purl_type"`
+	SourceRepositoryURL string  `db:"source_repository_url"`
 }
 
 // SourcePurlRow is the raw row returned by the source-PURL lookup query:
@@ -72,12 +83,27 @@ func (m *ProjectModel) GetProjectsByPurlName(ctx context.Context, purlName strin
 	}
 	var allProjects []Project
 	err := m.db.SelectContext(ctx, &allProjects,
-		"SELECT purl_name, component,"+
-			" l.license_name AS   license, l.spdx_id AS   license_id, l.is_spdx AS   is_spdx,"+
-			" g.license_name AS g_license, g.spdx_id AS g_license_id, g.is_spdx AS g_is_spdx"+
+		"SELECT p.mine_id, p.purl_name,"+
+			" COALESCE(m.purl_type, '')       AS purl_type,"+
+			" COALESCE(p.vendor, '')          AS vendor,"+
+			" COALESCE(p.component, '')       AS component,"+
+			" COALESCE(l.license_name, '')    AS license,"+
+			" COALESCE(l.spdx_id, '')         AS license_id,"+
+			" COALESCE(l.is_spdx, false)      AS is_spdx,"+
+			" COALESCE(g.license_name, '')    AS g_license,"+
+			" COALESCE(g.spdx_id, '')         AS g_license_id,"+
+			" COALESCE(g.is_spdx, false)      AS g_is_spdx,"+
+			" p.source_mine_id,"+
+			" p.source_purl_name,"+
+			" p.source_vendor,"+
+			" p.source_component,"+
+			" COALESCE(sm.mine_name, '')      AS source_mine_name,"+
+			" COALESCE(sm.purl_type, '')     AS source_purl_type,"+
+			" COALESCE(sm.repository_url, '') AS source_repository_url"+
 			" FROM projects p"+
-			" LEFT JOIN mines m ON p.mine_id = m.id"+
-			" LEFT JOIN licenses l ON p.license_id = l.id"+
+			" LEFT JOIN mines m    ON p.mine_id        = m.id"+
+			" LEFT JOIN mines sm   ON p.source_mine_id = sm.id"+
+			" LEFT JOIN licenses l ON p.license_id     = l.id"+
 			" LEFT JOIN licenses g ON p.git_license_id = g.id"+
 			" WHERE m.purl_type = $1 AND p.purl_name = $2",
 		purlType, purlName)
@@ -131,9 +157,9 @@ func (m *ProjectModel) GetSourcePurl(ctx context.Context, purlName string, purlT
 	}
 	var row SourcePurlRow
 	if rows.Next() {
-		if err := rows.StructScan(&row); err != nil {
-			s.Errorf("Failed to parse source purl row for %v, %v: %v", purlName, purlType, err)
-			return SourcePurlRow{}, fmt.Errorf("failed to parse source purl row: %v", err)
+		if errStruct := rows.StructScan(&row); errStruct != nil {
+			s.Errorf("Failed to parse source purl row for %v, %v: %v", purlName, purlType, errStruct)
+			return SourcePurlRow{}, fmt.Errorf("failed to parse source purl row: %v", errStruct)
 		}
 	}
 	return row, nil
@@ -151,13 +177,29 @@ func (m *ProjectModel) GetProjectByPurlName(ctx context.Context, purlName string
 		return Project{}, errors.New("please specify a valid Mine ID to query")
 	}
 	rows, err := m.db.QueryxContext(ctx,
-		"SELECT purl_name, component,"+
-			" l.license_name AS   license, l.spdx_id AS   license_id, l.is_spdx AS   is_spdx,"+
-			" g.license_name AS g_license, g.spdx_id AS g_license_id, g.is_spdx AS g_is_spdx"+
+		"SELECT p.mine_id, p.purl_name,"+
+			" COALESCE(m.purl_type, '')       AS purl_type,"+
+			" COALESCE(p.vendor, '')          AS vendor,"+
+			" COALESCE(p.component, '')       AS component,"+
+			" COALESCE(l.license_name, '')    AS license,"+
+			" COALESCE(l.spdx_id, '')         AS license_id,"+
+			" COALESCE(l.is_spdx, false)      AS is_spdx,"+
+			" COALESCE(g.license_name, '')    AS g_license,"+
+			" COALESCE(g.spdx_id, '')         AS g_license_id,"+
+			" COALESCE(g.is_spdx, false)      AS g_is_spdx,"+
+			" p.source_mine_id,"+
+			" p.source_purl_name,"+
+			" p.source_vendor,"+
+			" p.source_component,"+
+			" COALESCE(sm.mine_name, '')      AS source_mine_name,"+
+			" COALESCE(sm.purl_type, '')      AS source_purl_type,"+
+			" COALESCE(sm.repository_url, '') AS source_repository_url"+
 			" FROM projects p"+
-			" LEFT JOIN licenses l ON p.license_id = l.id"+
+			" LEFT JOIN mines m    ON p.mine_id        = m.id"+
+			" LEFT JOIN mines sm   ON p.source_mine_id = sm.id"+
+			" LEFT JOIN licenses l ON p.license_id     = l.id"+
 			" LEFT JOIN licenses g ON p.git_license_id = g.id"+
-			" WHERE purl_name = $1 AND mine_id = $2",
+			" WHERE p.purl_name = $1 AND p.mine_id = $2",
 		purlName, mineID)
 
 	defer func() {
@@ -181,6 +223,56 @@ func (m *ProjectModel) GetProjectByPurlName(ctx context.Context, purlName string
 			s.Errorf("Query failed for purl_name = %v, mine_id = %v", purlName, mineID)
 			return Project{}, fmt.Errorf("failed to query the projects table: %v", err)
 		}
+	}
+	return project, nil
+}
+
+// GetProjectByPurl searches the projects' table for a single project matching
+// the given Purl Name and Purl Type (resolved via the mines join). Returns
+// sql.ErrNoRows when no match exists.
+func (m *ProjectModel) GetProjectByPurl(ctx context.Context, purlName string, purlType string) (Project, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+	if len(purlName) == 0 {
+		s.Error("Please specify a valid Purl Name to query")
+		return Project{}, errors.New("please specify a valid Purl Name to query")
+	}
+	if len(purlType) == 0 {
+		s.Error("Please specify a valid Purl Type to query")
+		return Project{}, errors.New("please specify a valid Purl Type to query")
+	}
+	var project Project
+	err := m.db.GetContext(ctx, &project,
+		"SELECT p.mine_id, p.purl_name,"+
+			" COALESCE(m.purl_type, '')       AS purl_type,"+
+			" COALESCE(p.vendor, '')          AS vendor,"+
+			" COALESCE(p.component, '')       AS component,"+
+			" COALESCE(l.license_name, '')    AS license,"+
+			" COALESCE(l.spdx_id, '')         AS license_id,"+
+			" COALESCE(l.is_spdx, false)      AS is_spdx,"+
+			" COALESCE(g.license_name, '')    AS g_license,"+
+			" COALESCE(g.spdx_id, '')         AS g_license_id,"+
+			" COALESCE(g.is_spdx, false)      AS g_is_spdx,"+
+			" p.source_mine_id,"+
+			" p.source_purl_name,"+
+			" p.source_vendor,"+
+			" p.source_component,"+
+			" COALESCE(sm.mine_name, '')      AS source_mine_name,"+
+			" COALESCE(sm.purl_type, '')      AS source_purl_type,"+
+			" COALESCE(sm.repository_url, '') AS source_repository_url"+
+			" FROM projects p"+
+			" LEFT JOIN mines m    ON p.mine_id        = m.id"+
+			" LEFT JOIN mines sm   ON p.source_mine_id = sm.id"+
+			" LEFT JOIN licenses l ON p.license_id     = l.id"+
+			" LEFT JOIN licenses g ON p.git_license_id = g.id"+
+			" WHERE m.purl_type = $1 AND p.purl_name = $2"+
+			" LIMIT 1",
+		purlType, purlName)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Project{}, err
+		}
+		s.Errorf("Failed to query projects table for %v, %v: %v", purlName, purlType, err)
+		return Project{}, fmt.Errorf("failed to query the projects table: %v", err)
 	}
 	return project, nil
 }
