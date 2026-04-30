@@ -34,6 +34,10 @@ var ErrComponentNotFound = errors.New("component not found")
 // ErrVersionNotFound is returned when a component exists but no version could be determined.
 var ErrVersionNotFound = errors.New("version not found")
 
+// ErrSourcePurlNotFound is returned when no source PURL row is found for the
+// given PURL.
+var ErrSourcePurlNotFound = errors.New("source purl not found")
+
 // ComponentService orchestrates component lookup logic using extracted business logic.
 type ComponentService struct {
 	models *models.Models
@@ -168,6 +172,40 @@ func (cs *ComponentService) GetComponentVersions(ctx context.Context, purl strin
 	return types.ComponentVersionsResponse{
 		Purl:     purl,
 		Versions: versions,
+	}, nil
+}
+
+// GetSourcePurl retrieves the source-mine row used to build a source PURL
+// for the given component PURL. The returned data is the raw source-mine
+// fields (type, vendor, name, repository URL); callers are responsible for
+// assembling the final PURL string. Returns ErrSourcePurlNotFound if no
+// source PURL exists for the component.
+func (cs *ComponentService) GetSourcePurl(ctx context.Context, purl string) (types.SourcePurl, error) {
+	if len(purl) == 0 {
+		return types.SourcePurl{}, errors.New("please specify a valid purl to query")
+	}
+	packageURL, err := purlutils.PurlFromString(purl)
+	if err != nil {
+		return types.SourcePurl{}, fmt.Errorf("failed to parse purl: %w", err)
+	}
+	purlName, err := purlutils.PurlNameFromString(purl)
+	if err != nil {
+		return types.SourcePurl{}, fmt.Errorf("failed to extract purl name: %w", err)
+	}
+	row, err := cs.models.Projects.GetSourcePurl(ctx, purlName, packageURL.Type)
+	if err != nil {
+		return types.SourcePurl{}, err
+	}
+	if row.SourcePurlName == "" {
+		return types.SourcePurl{}, ErrSourcePurlNotFound
+	}
+	return types.SourcePurl{
+		SourceMineID:   row.SourceMineID,
+		SourcePurlName: row.SourcePurlName,
+		SourceVendor:   row.SourceVendor,
+		MineName:       row.MineName,
+		PurlType:       row.PurlType,
+		RepositoryURL:  row.RepositoryURL,
 	}, nil
 }
 

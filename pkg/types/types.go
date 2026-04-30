@@ -51,3 +51,21 @@ type ComponentVersionsResponse struct {
 	// Versions is the list of all available versions for the component.
 	Versions []string `json:"versions"`
 }
+
+// SourcePurl represents the raw source-mine data used to build a source PURL
+// for a component. It is the public, decoded form of the projects/mines join
+// row used by the source PURL lookup.
+type SourcePurl struct {
+	// SourceMineID is the id of the source mine the component was sourced from.
+	SourceMineID int32 `json:"source_mine_id"`
+	// SourcePurlName is the PURL name on the source mine.
+	SourcePurlName string `json:"source_purl_name"`
+	// SourceVendor is the namespace/vendor on the source mine (may be empty).
+	SourceVendor string `json:"source_vendor"`
+	// MineName is the human-readable name of the source mine.
+	MineName string `json:"mine_name"`
+	// PurlType is the PURL type of the source mine (e.g., "github").
+	PurlType string `json:"purl_type"`
+	// RepositoryURL is the canonical repository URL exposed by the source mine.
+	RepositoryURL string `json:"repository_url"`
+}

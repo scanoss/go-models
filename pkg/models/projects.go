@@ -42,6 +42,18 @@ type Project struct {
 	GitIsSpdx    bool   `db:"g_is_spdx"`
 }
 
+// SourcePurlRow is the raw row returned by the source-PURL lookup query:
+// a join across projects and mines that exposes the source-mine fields
+// needed to assemble a source PURL.
+type SourcePurlRow struct {
+	SourceMineID   int32  `db:"source_mine_id"`
+	SourcePurlName string `db:"source_purl_name"`
+	SourceVendor   string `db:"source_vendor"`
+	MineName       string `db:"mine_name"`
+	PurlType       string `db:"purl_type"`
+	RepositoryURL  string `db:"repository_url"`
+}
+
 // NewProjectModel creates a new instance of the Project Model.
 func NewProjectModel(db *sqlx.DB) *ProjectModel {
 	return &ProjectModel{db: db}
@@ -74,6 +86,57 @@ func (m *ProjectModel) GetProjectsByPurlName(ctx context.Context, purlName strin
 		return nil, fmt.Errorf("failed to query the projects table: %v", err)
 	}
 	return allProjects, nil
+}
+
+// GetSourcePurl looks up the source-mine row used to build a source PURL
+// for a component identified by (purlName, purlType). It returns an empty
+// row (and nil error) when no match exists.
+func (m *ProjectModel) GetSourcePurl(ctx context.Context, purlName string, purlType string) (SourcePurlRow, error) {
+	s := ctxzap.Extract(ctx).Sugar()
+	if len(purlName) == 0 {
+		s.Error("Please specify a valid Purl Name to query")
+		return SourcePurlRow{}, errors.New("please specify a valid Purl Name to query")
+	}
+	if len(purlType) == 0 {
+		s.Error("Please specify a valid Purl Type to query")
+		return SourcePurlRow{}, errors.New("please specify a valid Purl Type to query")
+	}
+	rows, err := m.db.QueryxContext(ctx,
+		"SELECT p.source_mine_id,"+
+			" COALESCE(p.source_purl_name, '') AS source_purl_name,"+
+			" COALESCE(p.source_vendor, '')    AS source_vendor,"+
+			" COALESCE(sm.mine_name, '')       AS mine_name,"+
+			" COALESCE(sm.purl_type, '')       AS purl_type,"+
+			" COALESCE(sm.repository_url, '')  AS repository_url"+
+			" FROM projects p"+
+			" INNER JOIN mines m  ON p.mine_id        = m.id"+
+			" INNER JOIN mines sm ON p.source_mine_id = sm.id"+
+			" WHERE p.mine_id        IS NOT NULL"+
+			"   AND p.source_mine_id IS NOT NULL"+
+			"   AND p.purl_name      = $1"+
+			"   AND m.purl_type      = $2"+
+			" LIMIT 1",
+		purlName, purlType)
+	defer func() {
+		if rows != nil {
+			closeErr := rows.Close()
+			if closeErr != nil {
+				s.Warnf("Problem closing Rows: %v", closeErr)
+			}
+		}
+	}()
+	if err != nil {
+		s.Errorf("Failed to query source purl for %v, %v: %v", purlName, purlType, err)
+		return SourcePurlRow{}, fmt.Errorf("failed to query the projects table: %v", err)
+	}
+	var row SourcePurlRow
+	if rows.Next() {
+		if err := rows.StructScan(&row); err != nil {
+			s.Errorf("Failed to parse source purl row for %v, %v: %v", purlName, purlType, err)
+			return SourcePurlRow{}, fmt.Errorf("failed to parse source purl row: %v", err)
+		}
+	}
+	return row, nil
 }
 
 // GetProjectByPurlName searches the projects' table for details about a Purl Name and Mine ID.

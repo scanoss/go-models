@@ -13,6 +13,7 @@ CREATE TABLE all_urls
     version_id   integer,
     license_id   integer,
     purl_name    text,
+    is_mined     boolean default true,
     primary key (package_hash, url, url_hash)
 );
 

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added `GetSourcePurl` method in `ComponentService` to retrieve the source-mine row used to build a source PURL for a component
+- Added `GetSourcePurl` method in `ProjectModel` to query the `projects`/`mines` join for the source PURL row
+- Added `SourcePurlRow` struct in `ProjectModel` for the raw join row
+- Added `SourcePurl` type for the public, decoded source PURL response
+- Added `ErrSourcePurlNotFound` sentinel error in `ComponentService`
+- Added `is_mined` column to the `all_urls` mock schema
 
 ## [0.9.0] - 2026-04-01
 ### Added
