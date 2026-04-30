@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2018-2023 SCANOSS.COM
+ * Copyright (C) 2018-2026 SCANOSS.COM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,4 +50,45 @@ type ComponentVersionsResponse struct {
 
 	// Versions is the list of all available versions for the component.
 	Versions []string `json:"versions"`
+}
+
+// Project represents a row from the projects table joined with mines and
+// licenses. It is the public, decoded form of the project lookup used as a
+// fallback when no resolved component is available.
+//
+// Nullable columns (source_mine_id, source_purl_name, source_vendor,
+// source_component) are exposed as pointers so callers can distinguish
+// "not set" from "empty value". The source_mine_* fields are derived from
+// a LEFT JOIN on mines using source_mine_id; they are empty strings when
+// no source mine is linked.
+type Project struct {
+	// MineID is the id of the mine the project was sourced from.
+	MineID int32 `json:"mine_id"`
+	// PurlName is the PURL name (e.g., "lodash" or "github.com/foo/bar").
+	PurlName string `json:"purl_name"`
+	// PurlType is the PURL type from the joined mines row (e.g., "npm").
+	PurlType string `json:"purl_type"`
+	// Vendor is the project vendor/namespace as recorded in the projects row.
+	Vendor string `json:"vendor"`
+	// Component is the project component name as recorded in the projects row.
+	Component string `json:"component"`
+	// License is the SPDX license name from the joined licenses row.
+	License string `json:"license,omitempty"`
+	// LicenseID is the SPDX license id from the joined licenses row.
+	LicenseID string `json:"license_id,omitempty"`
+	// SourceMineID is the id of the source mine the project was sourced from.
+	// Nil when the project has no linked source mine.
+	SourceMineID *int32 `json:"source_mine_id,omitempty"`
+	// SourcePurlName is the PURL name on the source mine. Nil when not set.
+	SourcePurlName *string `json:"source_purl_name,omitempty"`
+	// SourceVendor is the vendor/namespace on the source mine. Nil when not set.
+	SourceVendor *string `json:"source_vendor,omitempty"`
+	// SourceComponent is the component name on the source mine. Nil when not set.
+	SourceComponent *string `json:"source_component,omitempty"`
+	// SourceMineName is the human-readable name of the source mine.
+	SourceMineName string `json:"source_mine_name,omitempty"`
+	// SourcePurlType is the PURL type of the source mine.
+	SourcePurlType string `json:"source_purl_type,omitempty"`
+	// SourceRepositoryURL is the canonical repository URL exposed by the source mine.
+	SourceRepositoryURL string `json:"source_repository_url,omitempty"`
 }

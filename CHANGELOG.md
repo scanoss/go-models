@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added `ProjectService` with `GetProject` method to retrieve a project data
+- Added `GetProjectByPurlName(purlName, purlType)` method in `ProjectModel` to look up a single project by PURL name and type
+- Added `Project` type for the public, decoded project response, with nullable source columns (`source_mine_id`, `source_purl_name`, `source_vendor`, `source_component`) exposed as pointers
+- Added `ErrProjectNotFound` sentinel error in `ProjectService`
+- Wired `ProjectService` into `scanoss.Client`
+
+### Changed
+- Extended `ProjectModel.Project` struct with `MineID`, `PurlType`, `Vendor`, `SourceMineName`, `SourcePurlType`, `SourceRepositoryURL`
+- **Breaking:** Renamed `ProjectModel.GetProjectByPurlName(purlName, mineID)` to `ProjectModel.GetProjectByPurlNameAndMineID(purlName, mineID)`
 
 ## [0.9.0] - 2026-04-01
 ### Added
