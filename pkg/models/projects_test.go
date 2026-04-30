@@ -71,30 +71,30 @@ func TestProjectsSearch(t *testing.T) {
 	purlName = "tablestyle"
 	var mineId int32 = 1
 	fmt.Printf("Searching for project: %v - %v\n", purlName, mineId)
-	project, err := projectsModel.GetProjectByPurlName(ctx, "tablestyle", mineId)
+	project, err := projectsModel.GetProjectByPurlNameAndMineID(ctx, "tablestyle", mineId)
 	if err != nil {
-		t.Errorf("projects.GetProjectByPurlName() error = %+v", err)
+		t.Errorf("projects.GetProjectByPurlNameAndMineID() error = %+v", err)
 	}
 	if len(project.PurlName) == 0 {
-		t.Errorf("projects.GetProjectByPurlName() No project returned from query")
+		t.Errorf("projects.GetProjectByPurlNameAndMineID() No project returned from query")
 	} else {
 		fmt.Printf("Project: %v\n", project)
 	}
 	purlName = ""
 	mineId = -1
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
-	_, err = projectsModel.GetProjectByPurlName(ctx, purlName, mineId)
+	_, err = projectsModel.GetProjectByPurlNameAndMineID(ctx, purlName, mineId)
 	if err == nil {
-		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
+		t.Errorf("projects.GetProjectByPurlNameAndMineID() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
 	purlName = "NONEXISTENT"
 	mineId = -1
 	fmt.Printf("Searching for project list: %v - %v\n", purlName, purlType)
-	_, err = projectsModel.GetProjectByPurlName(ctx, purlName, mineId)
+	_, err = projectsModel.GetProjectByPurlNameAndMineID(ctx, purlName, mineId)
 	if err == nil {
-		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
+		t.Errorf("projects.GetProjectByPurlNameAndMineID() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
@@ -118,9 +118,9 @@ func TestProjectsSearchBadSql(t *testing.T) {
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
-	_, err = projectsModel.GetProjectByPurlName(ctx, "rubbish", 2)
+	_, err = projectsModel.GetProjectByPurlNameAndMineID(ctx, "rubbish", 2)
 	if err == nil {
-		t.Errorf("projects.GetProjectByPurlName() error = did not get an error")
+		t.Errorf("projects.GetProjectByPurlNameAndMineID() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
